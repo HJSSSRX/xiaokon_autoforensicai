@@ -130,12 +130,12 @@ post_install:
 # Where to download this knowledge pack from
 sources:
   github:
-    repo: "HJSSSRX/xiaokon_autoforensicai"
+    repo: "HJSSSRX/autoforensicai_data"
     branch: "main"
     type: "git_clone"
 
   release:
-    url: "https://github.com/HJSSSRX/xiaokon_autoforensicai/releases/latest"
+    url: "https://github.com/HJSSSRX/autoforensicai_data/releases/latest"
     type: "zip_download"
 
   local:
