@@ -17,11 +17,13 @@
 | 你要做什么 | 入口文件 |
 |-----------|---------|
 | 了解项目全貌 | 本文件 |
-| 开始比赛/做题 | `AGENTS.md` → 选策略 → 开始 |
+| **开始比赛/做题** | **`AGENTS.md`** → 对 AI 说 **"小空你自己动"** → AI 自动问你要什么模式 |
 | 部署环境 | `share/QUICKSTART_HUMAN.md` |
 | 学习取证 | 教育模式 (`strategies/education_local_solo.yaml`) |
 | 了解设计 | `share/SYSTEM_DESIGN.md` |
 | 了解项目价值 | `share/PROPOSAL.md` |
+
+**触发词**：在任意 AI Agent 中打开本项目后，说 **"小空你自己动"**，AI 会自动读取配置、询问模式、开始取证工作。
 
 ### 工作模式
 
@@ -122,6 +124,21 @@ ForensicAI (小空自己动)/
 | FIC2026 | 367/600 (61.2%) | 1h | ~$10 |
 
 详细分析见 `share/SYSTEM_REVIEW.md`。
+
+## 提示词系统 (Prompt System)
+
+本项目对 AI 的行为约束通过一套**文件化提示词**实现，不是写在某一条消息里的：
+
+| 文件 | 用途 | 修改权限 |
+|------|------|---------|
+| `AGENTS.md` | **通用入口**：AI 先读这个，知道自己是取证助手、启动流程、核心规则 | 用户 |
+| `AI_BRAIN/persona.md` | **行为定义**：沟通风格、决策原则、时间管理、四条"宪法"（非用户明确不改） | 用户 |
+| `AI_BRAIN/output_contract.md` | **答案格式**：每题必须包含 5 字段（题号+原文+答案+解析+不作弊声明） | 用户 |
+| `knowledge/taxonomy.yaml` | **知识分类**：7 大类 40+ 子类的取证标签体系 | 用户 |
+| `strategies/*.yaml` | **策略配置**：不同场景（比赛/训练/教育/断网）的 prompt 和参数 | 用户 |
+| `.windsurf/rules/project-rules.md` | **Windsurf 专属**：IDE 级规则，与通用规则互补 | 用户 |
+
+**AI 每次新会话的开场顺序**：`AGENTS.md` → `persona.md` → `output_contract.md` → `taxonomy.yaml` → 策略文件。
 
 ## 开发状态
 

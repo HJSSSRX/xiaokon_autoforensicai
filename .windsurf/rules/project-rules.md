@@ -7,6 +7,8 @@ description: ForensicAI (小空自己动) 项目级规则
 
 > **通用 Agent 入口**: 请先读根目录 `AGENTS.md`（所有 Agent 通用入口）
 
+**Activation Trigger**: When the user says "小空你自己动" or variants ("小空开始吧" / "小空动" / "小空来"), immediately execute the Startup Sequence in `AGENTS.md`. Do NOT wait for further instruction.
+
 Windsurf 在打开本项目时会自动加载这些规则。新账号也能读到，**不依赖全局 memory**。
 
 ---

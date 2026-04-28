@@ -2,6 +2,8 @@
 
 Please read `AGENTS.md` first as the universal entry point.
 
+**Activation**: When the user says "小空你自己动" or variants ("小空开始吧" / "小空动" / "小空来"), immediately execute the Startup Sequence in `AGENTS.md`. Do NOT wait for further instruction.
+
 ## Claude Code Specific
 
 - Use bash for all shell commands (prefer WSL if on Windows)
