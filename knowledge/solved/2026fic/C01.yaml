@@ -1,0 +1,102 @@
+# FIC2026 C01 — OS Version Identification
+# Migrated from: cases/2026FIC电子取证/wp_batches/MAIN_C01-C07_I03.md
+
+meta:
+  competition: "FIC2026"
+  competition_id: "2026fic"
+  question_id: "C01"
+  question_text: "分析计算机检材，操作系统版本号为"
+  category_l1: "windows_disk"         # actually deepin/UOS Linux, but "PC disk" category
+  category_l2: "installed_software"
+  tags:
+    - "os_identification"
+    - "deepin"
+    - "uos"
+    - "linux_desktop"
+  points: 9
+  difficulty: "easy"
+
+answer:
+  value: "UnionTech OS Desktop 20 Pro"
+  value_type: "text"
+  confidence: "high"
+  verified: false
+  verified_method: "unverified"
+  verified_date: null
+
+walkthrough:
+  summary: "从 /etc/os-release 或 /etc/deepin-version 读取操作系统版本"
+  steps:
+    - seq: 1
+      description: "Mount the disk image and locate OS identification files"
+      command: "cat {mount}/etc/os-release"
+      tool: "cat"
+      expected_output: "PRETTY_NAME containing OS name and version"
+      human_note: "For Deepin/UOS, also check /etc/deepin-version"
+
+    - seq: 2
+      description: "Cross-validate with deepin-specific version file"
+      command: "cat {mount}/etc/deepin-version"
+      tool: "cat"
+      expected_output: "Version=20, Type=Professional"
+      human_note: "UOS Desktop 20 Pro is based on Debian 10 (Buster)"
+
+    - seq: 3
+      description: "Additional validation from LSB release"
+      command: "cat {mount}/etc/lsb-release"
+      tool: "cat"
+      expected_output: "DISTRIB_DESCRIPTION with UOS info"
+      human_note: "Multiple sources should agree"
+
+  evidence_path: "PC.E01 → [root]/etc/os-release, /etc/deepin-version"
+
+tools_used:
+  - name: "cat"
+    version: "any"
+    platform: "linux"
+    install_script: null
+    install_path: "/usr/bin/cat"
+    alternative: null
+
+ai_meta:
+  first_solved_by: "claude-sonnet-4"
+  solve_time_seconds: 30
+  token_cost_usd: 0.05
+  model_difficulty: "trivial"
+  requires_gui: false
+  requires_internet: false
+
+education:
+  prerequisites:
+    - "Linux 发行版基础概念"
+    - "磁盘镜像挂载方法"
+  learning_objectives:
+    - "了解 Linux 系统版本信息的存储位置"
+    - "区分 Deepin/UOS 与标准 Debian 系统"
+    - "学会多文件交叉验证系统信息"
+  difficulty_for_human: "beginner"
+  estimated_learning_time: "5min"
+  guided_prompts:
+    - prompt: "这道题问操作系统版本。Linux 系统中，版本信息通常存放在哪些文件？"
+      hints:
+        - "想想 /etc/ 目录下有哪些和系统版本有关的文件"
+        - "/etc/os-release 是标准的系统识别文件"
+      answer_keywords: ["os-release", "/etc/"]
+    - prompt: "你找到了什么版本信息？Deepin 和 UOS 是什么关系？"
+      hints:
+        - "Deepin 是社区版，UOS 是商业版，底层相同"
+      answer_keywords: ["UnionTech", "UOS", "Deepin"]
+  common_mistakes:
+    - mistake: "回答底层 Debian 版本号而非 UOS 版本"
+      correction: "题目问的是操作系统版本号，应回答发行版名称，不是内核或底层"
+    - mistake: "只看一个文件就下结论"
+      correction: "养成多文件交叉验证的习惯"
+  related_questions:
+    - "2026fic/M01"  # similar pattern: device identification
+  knowledge_refs: []
+
+status:
+  progress: "complete"
+  human_reviewed: false
+  last_updated: "2026-04-28"
+  notes: "Migrated from wp_batches. Answer not yet officially verified."

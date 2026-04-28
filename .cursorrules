@@ -1,0 +1,6 @@
+Please read `AGENTS.md` first as the universal entry point for this project.
+
+This is a digital forensics AI assistant project (codename: 小空自己动).
+All communication must be in 简体中文. Code comments stay in English.
+Follow the rules defined in `AI_BRAIN/persona.md` and `AI_BRAIN/output_contract.md`.
+Load the appropriate strategy from `strategies/` based on the current session mode.

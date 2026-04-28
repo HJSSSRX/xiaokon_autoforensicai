@@ -1,0 +1,64 @@
+# Strategy: Training mode with cloud model, producing knowledge
+# Use case: Using past competition questions to build knowledge base
+
+name: "训练模式 (云端模型 + 知识产出)"
+description: "使用强模型做历年真题，产出结构化题解入知识库"
+
+session:
+  network: online
+  model: cloud_api
+  scenario: training
+  integrity: exam_mode          # default: don't search for this year's answers
+  collaboration: solo
+  platform: wsl
+
+model_config:
+  primary: "claude-sonnet"
+  embedding: "bge-small-zh-v1.5"
+  api_mode: "byok"
+
+index_mode: "mode_a_rag"
+
+agent_config:
+  max_time_per_question: 45     # more time allowed in training
+  skip_after: 60                # skip after 1 hour
+  verification: "thorough"      # verify every answer more carefully
+  batch_report_interval: 5
+
+output_requirements:
+  # Training mode MUST produce structured YAML for every solved question
+  produce_yaml: true
+  yaml_output_dir: "knowledge/solved/{competition_id}/"
+  yaml_fields_required:
+    - "meta"
+    - "answer"
+    - "walkthrough"
+    - "tools_used"
+    - "education"
+    - "status"
+  # Each walkthrough step must be human-reproducible
+  walkthrough_standard: "human_reproducible"
+  # Include education guided prompts
+  include_education: true
+
+exam_mode:
+  forbidden_actions:
+    - "Search for {competition_name} {year} writeup or answers"
+    - "Search for question text to find others' solutions"
+  allowed_actions:
+    - "Search for tool usage methods"
+    - "Search for technical concepts"
+    - "Query local knowledge base"
+  integrity_log: "worklog/exam_integrity.log"
+
+constraints:
+  answer_format: "5_field"
+  must_produce_yaml: true       # key difference from competition mode
+  quality_over_speed: true      # prioritize knowledge quality
+
+startup_reads:
+  - "AI_BRAIN/persona.md"
+  - "AI_BRAIN/output_contract.md"
+  - "knowledge/taxonomy.yaml"
+  - "PLAYBOOK.md"
+  - "cases/{competition}/questions.md"

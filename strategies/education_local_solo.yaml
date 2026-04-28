@@ -1,0 +1,53 @@
+# Strategy: Education mode with local model
+# Use case: Teaching forensics to beginners using solved question database
+
+name: "教育模式 (本地模型 + 新手引导)"
+description: "面向零基础或有一定基础的学员，使用本地模型进行交互式取证教学"
+
+session:
+  network: online               # can be offline too
+  model: local_low              # even 7B model works for education
+  scenario: education
+  integrity: unrestricted       # education uses solved questions with known answers
+  collaboration: solo
+  platform: linux               # or wsl
+
+model_config:
+  primary: "ollama/qwen3-7b"    # lightweight, sufficient for guided dialogue
+  fallback: null                # no fallback needed
+  embedding: "bge-small-zh-v1.5"
+  api_mode: "local"
+
+index_mode: "mode_b_sop"        # SOP scripts + pre-written guided prompts
+
+education_config:
+  # Teaching level determined at session start
+  levels:
+    L1_guided:
+      description: "手把手模式 (纯新手)"
+      ai_behavior: "Step-by-step Socratic questioning. Never give direct answers."
+      use_guided_prompts: true   # follow education.guided_prompts from YAML
+      show_hints_after: 2        # show hint after 2 failed attempts
+    L2_hinted:
+      description: "提示模式 (有基础)"
+      ai_behavior: "Give direction hints only. Student operates independently."
+      use_guided_prompts: false
+      show_prerequisites: true
+    L3_independent:
+      description: "独立模式 (备赛选手)"
+      ai_behavior: "Only provide question. Review and feedback after completion."
+      use_guided_prompts: false
+      post_solve_comparison: true  # compare student's approach with optimal
+
+  learning_path_dir: "education/"
+  progress_tracking: "education/student_progress.yaml"
+
+constraints:
+  never_give_direct_answer: true  # fundamental rule for education
+  explain_methodology: true       # always explain WHY, not just WHAT
+  encourage_verification: true    # teach students to verify their findings
+
+startup_reads:
+  - "AI_BRAIN/persona.md"
+  - "knowledge/taxonomy.yaml"
+  - "education/learning_paths.md"

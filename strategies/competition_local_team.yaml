@@ -1,0 +1,69 @@
+# Strategy: Offline/LAN competition with local models, team mode
+# Use case: FIC线下赛, air-gapped or LAN-only environment
+
+name: "线下比赛 (本地模型 + 团队协作)"
+description: "适用于断网或局域网线下比赛，使用本地部署模型，多人/多机协作"
+
+session:
+  network: airgapped            # or lan_only
+  model: local_high             # Qwen3-32B or DeepSeek-V3 quantized
+  scenario: competition
+  integrity: unrestricted
+  collaboration: team
+  platform: linux               # native Linux preferred for local models
+
+model_config:
+  primary: "ollama/qwen3-32b-q4"
+  fallback: "ollama/qwen3-7b"
+  embedding: "bge-small-zh-v1.5"  # pre-installed, runs on CPU
+  api_mode: "local"
+
+index_mode: "mode_a_rag"        # 32B model can handle RAG
+
+agent_config:
+  max_time_per_question: 25     # slightly more time for weaker model
+  skip_after: 35
+  verification: "self_check"
+  batch_report_interval: 5
+  parallel_agents: 3            # 3 machines: PC/Phone/Server
+
+human_role:
+  triage: true
+  verification_interval: 8      # more frequent human checks
+  gui_tools: true
+  final_review: true
+
+coordination:
+  method: "shared_filesystem"   # LAN shared folder or git over LAN
+  facts_file: "cases/{competition}/shared/facts.md"
+  inbox_dir: "cases/{competition}/shared/inbox/"
+  sync_interval_minutes: 5
+
+machine_roles:
+  machine_1:
+    role: "pc"
+    categories: ["windows_disk", "binary_reverse"]
+    role_file: "roles/ROLE_pc.md"
+  machine_2:
+    role: "phone"
+    categories: ["mobile_android", "mobile_ios"]
+    role_file: "roles/ROLE_phone.md"
+  machine_3:
+    role: "server"
+    categories: ["linux_server", "network_traffic", "osint"]
+    role_file: "roles/ROLE_server.md"
+
+constraints:
+  no_internet_search: true
+  no_external_api: true
+  local_only: true
+  answer_format: "5_field"
+
+startup_reads:
+  - "AI_BRAIN/persona.md"
+  - "AI_BRAIN/output_contract.md"
+  - "knowledge/taxonomy.yaml"
+  - "roles/ROLE_{machine_role}.md"
+  - "PLAYBOOK.md"
+  - "cases/{competition}/questions.md"
+  - "cases/{competition}/shared/facts.md"

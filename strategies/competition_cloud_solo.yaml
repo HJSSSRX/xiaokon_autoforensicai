@@ -1,0 +1,50 @@
+# Strategy: Online competition with cloud API, solo operator
+# Use case: FIC/平航杯 online competition, single human + AI
+
+name: "线上比赛 (云端模型 + 单人)"
+description: "适用于有网络的线上比赛，使用云端 API 模型"
+
+session:
+  network: online
+  model: cloud_api
+  scenario: competition
+  integrity: unrestricted
+  collaboration: solo
+  platform: wsl  # prefer WSL for tool execution
+
+model_config:
+  primary: "claude-sonnet"      # or any capable cloud model
+  embedding: "bge-small-zh-v1.5"
+  api_mode: "byok"              # bring your own key for unlimited tokens
+
+index_mode: "mode_a_rag"        # RAG vector retrieval
+
+agent_config:
+  max_time_per_question: 20     # minutes before considering skip
+  skip_after: 30                # hard skip after 30 min
+  verification: "self_check"    # AI self-verification after each answer
+  batch_report_interval: 5      # report to human every 5 questions
+  parallel_agents: 1            # single agent in solo mode
+
+human_role:
+  triage: true                  # human does initial question categorization
+  verification_interval: 10     # human reviews every 10 questions
+  gui_tools: true               # human handles GUI-only tools
+  final_review: true            # human does final review before submission
+
+time_allocation:
+  triage: "0:00-0:15"
+  main_solve: "0:15-3:30"
+  review: "3:30-4:00"
+
+constraints:
+  token_budget_usd: 50          # max API spend
+  answer_format: "5_field"      # mandatory 5-field format
+  wp_batch_interval: 5          # write wp_batch every 5 questions
+
+startup_reads:
+  - "AI_BRAIN/persona.md"
+  - "AI_BRAIN/output_contract.md"
+  - "knowledge/taxonomy.yaml"
+  - "PLAYBOOK.md"
+  - "cases/{competition}/questions.md"

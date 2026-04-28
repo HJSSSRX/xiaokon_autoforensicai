@@ -1,0 +1,211 @@
+# ForensicAI Knowledge Taxonomy
+# Two-level classification: L1 (evidence type) → L2 (knowledge topic)
+# Free tags can be added per-question beyond this framework
+# Last updated: 2026-04-28
+
+version: "1.0"
+
+taxonomy:
+
+  windows_disk:
+    display_name: "Windows 磁盘/镜像"
+    subcategories:
+      registry_analysis:
+        display_name: "注册表分析"
+        keywords: ["RECmd", "Registry Explorer", "regipy", "NTUSER.DAT", "SYSTEM", "SOFTWARE", "SAM"]
+      event_log:
+        display_name: "事件日志"
+        keywords: ["EvtxECmd", "evtx", "Event Log", "4624", "4625", "Security.evtx"]
+      browser_history:
+        display_name: "浏览器历史"
+        keywords: ["Chrome", "Firefox", "Edge", "History", "SQLite", "Cookies", "Downloads"]
+      file_recovery:
+        display_name: "文件恢复/删除文件"
+        keywords: ["$Recycle.Bin", "tsk_recover", "photorec", "autopsy", "deleted"]
+      file_system:
+        display_name: "文件系统 (MFT/NTFS)"
+        keywords: ["MFTECmd", "$MFT", "NTFS", "timestamps", "ADS", "alternate data stream"]
+      timeline_analysis:
+        display_name: "时间线分析"
+        keywords: ["Timeline Explorer", "bodyfile", "mactime", "Plaso"]
+      encryption_detection:
+        display_name: "加密检测"
+        keywords: ["BitLocker", "VeraCrypt", "TrueCrypt", "EFS", "LUKS"]
+      email_client:
+        display_name: "邮件客户端"
+        keywords: ["Outlook", "Foxmail", "Thunderbird", "deepin-mail", "PST", "EML", "MBOX"]
+      user_activity:
+        display_name: "用户行为"
+        keywords: ["Shellbags", "Prefetch", "JumpList", "LNK", "Recent", "UserAssist", "SRUM"]
+      network_config:
+        display_name: "网络配置"
+        keywords: ["IP", "DHCP", "DNS", "MAC", "adapter", "TCP/IP", "interfaces"]
+      usb_device:
+        display_name: "USB 设备痕迹"
+        keywords: ["USBSTOR", "setupapi", "mount point", "device serial"]
+      installed_software:
+        display_name: "已安装软件"
+        keywords: ["Uninstall", "Programs", "AppCompatCache", "Amcache"]
+      cloud_storage:
+        display_name: "云盘/同步工具"
+        keywords: ["OneDrive", "百度网盘", "坚果云", "Dropbox", "sync"]
+      virtual_machine:
+        display_name: "虚拟机检测"
+        keywords: ["VMware", "VirtualBox", "Hyper-V", "VMDK", "VHD", "QCOW2"]
+      office_document:
+        display_name: "办公文档分析"
+        keywords: ["WPS", "Excel", "Word", "OLE", "ZIP", "XML", "macro", "ET", "XLSX"]
+
+  linux_server:
+    display_name: "Linux 服务器"
+    subcategories:
+      log_analysis:
+        display_name: "系统日志"
+        keywords: ["syslog", "journalctl", "auth.log", "secure", "/var/log"]
+      web_log:
+        display_name: "Web 服务器日志"
+        keywords: ["access.log", "error.log", "nginx", "apache", "IIS"]
+      database_forensics:
+        display_name: "数据库取证"
+        keywords: ["MySQL", "TiDB", "Redis", "PostgreSQL", "SQLite", "frm", "ibd"]
+      docker_container:
+        display_name: "Docker/容器取证"
+        keywords: ["docker", "container", "overlay2", "image", "layer", "LXC", "LXD"]
+      webshell_detection:
+        display_name: "WebShell 检测"
+        keywords: ["webshell", "backdoor", "eval", "base64_decode", "system(", "<?php"]
+      intrusion_timeline:
+        display_name: "入侵时间线"
+        keywords: ["timeline", "first access", "lateral movement", "persistence"]
+      crontab_analysis:
+        display_name: "定时任务分析"
+        keywords: ["crontab", "cron", "systemd timer", "/etc/cron"]
+      ssh_analysis:
+        display_name: "SSH 登录分析"
+        keywords: ["ssh", "authorized_keys", "known_hosts", "sshd", "key-based"]
+      process_memory:
+        display_name: "进程/内存分析"
+        keywords: ["volatility", "memory dump", "process", "ps aux"]
+      raid_lvm:
+        display_name: "RAID/LVM 存储"
+        keywords: ["mdadm", "RAID", "LVM", "pvcreate", "vgdisplay", "lvdisplay"]
+
+  mobile_android:
+    display_name: "Android 手机"
+    subcategories:
+      app_data_extraction:
+        display_name: "App 数据提取"
+        keywords: ["adb", "data/data", "SQLite", "shared_prefs", "ALEAPP"]
+      wechat_analysis:
+        display_name: "微信分析"
+        keywords: ["WeChat", "EnMicroMsg.db", "微信", "WxFileIndex", "wal"]
+      qq_analysis:
+        display_name: "QQ 分析"
+        keywords: ["QQ", "databases", "slowtable", "troopuin"]
+      call_sms_contacts:
+        display_name: "通话/短信/联系人"
+        keywords: ["contacts2.db", "mmssms.db", "calllog", "SMS", "通话记录"]
+      gps_location:
+        display_name: "GPS/位置信息"
+        keywords: ["GPS", "location", "latitude", "longitude", "基站", "WiFi定位"]
+      photo_video:
+        display_name: "图片/视频/EXIF"
+        keywords: ["EXIF", "DCIM", "exiftool", "GPS坐标", "拍摄时间"]
+      apk_reverse:
+        display_name: "APK 逆向"
+        keywords: ["jadx", "apktool", "smali", "AndroidManifest", "dex", "JNI"]
+      browser_mobile:
+        display_name: "移动浏览器"
+        keywords: ["Chrome", "WebView", "browser2.db", "history"]
+      wallet_crypto:
+        display_name: "数字钱包/加密货币"
+        keywords: ["blockchain", "wallet", "Bitcoin", "Ethereum", "USDT", "助记词"]
+      social_media:
+        display_name: "社交媒体"
+        keywords: ["抖音", "微博", "小红书", "快手", "Telegram"]
+
+  mobile_ios:
+    display_name: "iOS 手机"
+    subcategories:
+      itunes_backup:
+        display_name: "iTunes 备份解析"
+        keywords: ["Manifest.db", "backup", "iTunes", "idevicebackup"]
+      keychain:
+        display_name: "Keychain 提取"
+        keywords: ["keychain", "keychain-2.db"]
+      imessage:
+        display_name: "iMessage/短信"
+        keywords: ["sms.db", "iMessage", "chat.db"]
+      health_data:
+        display_name: "健康/运动数据"
+        keywords: ["healthdb", "workout", "步数"]
+
+  network_traffic:
+    display_name: "网络流量"
+    subcategories:
+      protocol_analysis:
+        display_name: "协议分析"
+        keywords: ["Wireshark", "tshark", "TCP", "UDP", "HTTP", "FTP"]
+      file_carving:
+        display_name: "文件提取"
+        keywords: ["NetworkMiner", "foremost", "binwalk", "export objects"]
+      encrypted_traffic:
+        display_name: "加密流量"
+        keywords: ["TLS", "SSL", "HTTPS", "VPN", "SSLKEYLOGFILE"]
+      dns_analysis:
+        display_name: "DNS 分析"
+        keywords: ["DNS", "query", "response", "A record", "CNAME", "TXT"]
+      email_protocol:
+        display_name: "邮件协议"
+        keywords: ["SMTP", "POP3", "IMAP", "MIME"]
+      covert_channel:
+        display_name: "隐蔽通道"
+        keywords: ["steganography", "DNS tunnel", "ICMP tunnel", "covert"]
+
+  binary_reverse:
+    display_name: "二进制/逆向"
+    subcategories:
+      password_cracking:
+        display_name: "密码破解"
+        keywords: ["hashcat", "john", "rainbow table", "brute force", "字典"]
+      algorithm_identification:
+        display_name: "算法识别"
+        keywords: ["AES", "DES", "RSA", "XOR", "RC4", "base64", "custom cipher"]
+      anti_debug:
+        display_name: "反调试/反混淆"
+        keywords: ["obfuscation", "packing", "UPX", "anti-debug", "ptrace"]
+      crypto_implementation:
+        display_name: "加密算法实现"
+        keywords: ["encrypt", "decrypt", "key derivation", "IV", "padding"]
+      malware_analysis:
+        display_name: "恶意软件分析"
+        keywords: ["malware", "C2", "callback", "shellcode", "reverse shell"]
+
+  osint:
+    display_name: "开源情报"
+    subcategories:
+      social_media_osint:
+        display_name: "社交媒体调查"
+        keywords: ["username", "profile", "social media", "关联分析"]
+      domain_whois:
+        display_name: "域名/Whois"
+        keywords: ["whois", "domain", "registrar", "IP归属", "备案"]
+      image_metadata:
+        display_name: "图片元数据"
+        keywords: ["EXIF", "GPS", "拍摄设备", "修改时间"]
+      geolocation:
+        display_name: "地理定位"
+        keywords: ["地图", "街景", "经纬度", "地标"]
+
+  iot_drone:
+    display_name: "IoT/无人机"
+    subcategories:
+      drone_flight_log:
+        display_name: "无人机飞行日志"
+        keywords: ["DJI", "flight log", "GPS track", "DAT", "飞行记录"]
+      vehicle_forensics:
+        display_name: "车载取证"
+        keywords: ["行车记录仪", "OBD", "GPS轨迹", "车载系统"]
+      smart_device:
+        display_name: "智能设备"
+        keywords: ["IoT", "智能家居", "摄像头", "路由器"]

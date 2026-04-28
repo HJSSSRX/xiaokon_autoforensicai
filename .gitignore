@@ -1,0 +1,65 @@
+# === ForensicAI (小空自己动) .gitignore ===
+
+# Tools binary directory: large, install locally per machine
+/tools/
+.venv/
+.venv-path
+__pycache__/
+*.pyc
+node_modules/
+
+# Evidence files: read-only, huge, never push
+*.E01
+*.dd
+*.vmdk
+*.vhd
+*.pcap
+*.pcapng
+*.zip
+*.7z
+*.tar
+*.img
+*.vmem
+*.raw
+
+# Cases directory: default ignore, whitelist key docs for collaboration
+cases/*
+!cases/.keep
+!cases/.gitkeep
+!cases/.wsl_pw
+!cases/*/wp_batches/
+!cases/*/questions.md
+!cases/*/answers.md
+!cases/*/answers_summary.md
+!cases/*/handover.md
+!cases/*/TASKS.md
+!cases/*/NOTES.md
+!cases/*/README.md
+!cases/*/launch/
+
+# Case intermediates (per-machine local)
+cases/*/artifacts/
+cases/*/evidence/
+cases/*/.venv/
+cases/*/work_*/
+
+# AI advisor output (local reference)
+output/
+
+# RAG index (generated, can be rebuilt)
+knowledge/rag_index/
+
+# Offline model bundles (too large for git)
+install/offline_bundle/
+
+# Education student progress (per-user local)
+education/student_progress.yaml
+
+# Exam integrity logs (local only)
+worklog/exam_integrity.log
+
+# OS/IDE generated
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

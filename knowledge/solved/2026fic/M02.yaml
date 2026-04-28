@@ -1,0 +1,116 @@
+# FIC2026 M02 — Travel Plan Date from Todo App
+# Migrated from: cases/2026FIC电子取证/wp_batches/PHONE_M01-M05.md
+
+meta:
+  competition: "FIC2026"
+  competition_id: "2026fic"
+  question_id: "M02"
+  question_text: "分析手机检材，李安弘手机计划前往迪拜的日期是"
+  category_l1: "mobile_android"
+  category_l2: "app_data_extraction"
+  tags:
+    - "sqlite"
+    - "miui_notes"
+    - "todo"
+    - "date_extraction"
+    - "travel_plan"
+  points: 10
+  difficulty: "easy"
+
+answer:
+  value: "2026.06.06"
+  value_type: "date"
+  confidence: "high"
+  verified: false
+  verified_method: "unverified"
+  verified_date: null
+
+walkthrough:
+  summary: "从小米便签 todo.db 数据库中检索包含'迪拜/dubai'关键词的待办事项"
+  steps:
+    - seq: 1
+      description: "Locate MIUI Notes/Todo database"
+      command: "find {phone_extract}/data/user/0/com.miui.notes/databases/ -name '*.db'"
+      tool: "find"
+      expected_output: "todo.db, notes.db, etc."
+      human_note: "小米便签有 notes.db (笔记) 和 todo.db (待办) 两个数据库"
+
+    - seq: 2
+      description: "Query todo table for travel-related entries"
+      command: "sqlite3 {phone_extract}/data/user/0/com.miui.notes/databases/todo.db \"SELECT id,content,plain_text,datetime(create_time/1000,'unixepoch','+8 hours') FROM todo\""
+      tool: "sqlite3"
+      expected_output: "Row containing '2026.06.06 乘坐飞机去 dubai'"
+      human_note: "Timestamps stored as Unix millis, convert to CST (+8h)"
+
+    - seq: 3
+      description: "Verify with keyword search"
+      command: "sqlite3 {phone_extract}/data/user/0/com.miui.notes/databases/todo.db \"SELECT plain_text FROM todo WHERE plain_text LIKE '%dubai%'\""
+      tool: "sqlite3"
+      expected_output: "2026.06.06 乘坐飞机去 dubai"
+      human_note: "直接搜索关键词，快速定位"
+
+  evidence_path: "手机检材.tar → data/user/0/com.miui.notes/databases/todo.db"
+
+tools_used:
+  - name: "sqlite3"
+    version: "3.x"
+    platform: "both"
+    install_script: "install/01_install_wsl_tools.sh"
+    install_path: "/usr/bin/sqlite3"
+    alternative: "DB Browser for SQLite (GUI)"
+  - name: "find"
+    version: "any"
+    platform: "linux"
+    install_script: null
+    install_path: "/usr/bin/find"
+    alternative: null
+
+ai_meta:
+  first_solved_by: "claude-sonnet-4"
+  solve_time_seconds: 45
+  token_cost_usd: 0.08
+  model_difficulty: "trivial"
+  requires_gui: false
+  requires_internet: false
+
+education:
+  prerequisites:
+    - "SQLite 数据库基础"
+    - "Android 应用数据目录结构"
+    - "Unix 时间戳概念"
+  learning_objectives:
+    - "掌握 Android App 数据库取证方法"
+    - "学会 sqlite3 命令行查询"
+    - "理解时间戳转换 (Unix millis → 人类可读)"
+    - "学会关键词搜索定位目标数据"
+  difficulty_for_human: "beginner"
+  estimated_learning_time: "15min"
+  guided_prompts:
+    - prompt: "题目问'计划前往迪拜的日期'。这类信息可能记录在手机的哪个应用中？"
+      hints:
+        - "日历、备忘录、待办事项是常见记录位置"
+        - "小米手机用 com.miui.notes 存储便签和待办"
+      answer_keywords: ["便签", "待办", "notes", "todo"]
+    - prompt: "你找到了 todo.db。用 sqlite3 查询包含 'dubai' 或 '迪拜' 的记录"
+      hints:
+        - "SQL: SELECT * FROM todo WHERE plain_text LIKE '%dubai%'"
+      answer_keywords: ["2026.06.06", "dubai"]
+    - prompt: "记录中的时间戳是什么格式？如何转换为人类可读时间？"
+      hints:
+        - "毫秒级 Unix 时间戳，需要除以 1000 再加时区偏移"
+        - "sqlite3 函数: datetime(ts/1000,'unixepoch','+8 hours')"
+      answer_keywords: ["unixepoch", "1000", "+8"]
+  common_mistakes:
+    - mistake: "搜索'迪拜'中文关键词但数据库里存的是'dubai'英文"
+      correction: "同时搜索中英文关键词：LIKE '%迪拜%' OR LIKE '%dubai%'"
+    - mistake: "忘记时区转换，输出 UTC 时间"
+      correction: "中国比赛的时间一律转换为 CST (UTC+8)"
+  related_questions:
+    - "2026fic/M05"  # also involves app database forensics
+  knowledge_refs: []
+
+status:
+  progress: "complete"
+  human_reviewed: false
+  last_updated: "2026-04-28"
+  notes: "Migrated from PHONE_M01-M05.md. Good example of SQLite forensics pattern."

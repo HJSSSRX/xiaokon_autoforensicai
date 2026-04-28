@@ -1,0 +1,3 @@
+# 此目录存各机的 WP 批次文件
+# 命名：<板块>-Q<NN>-Q<MM>.md
+# 例：phone-Q01-Q05.md, pc-Q18-Q22.md, server-Q49-Q53.md

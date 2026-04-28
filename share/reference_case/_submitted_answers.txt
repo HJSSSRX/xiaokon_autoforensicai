@@ -1,0 +1,68 @@
+﻿=== Sheet: FIC2026 棰樼洰 ===
+缂栧彿	鏉垮潡	棰樺彿	棰樼洰	鍒嗗€?妫€鏉?鍒嗙粰	浼樺厛绾?鐘舵€?绛旀	璇佹嵁璺緞	澶囨敞
+C01	璁＄畻鏈?1	鍒嗘瀽璁＄畻鏈烘鏉愶紝鎿嶄綔绯荤粺鐗堟湰鍙蜂负	9	PC	MAIN	閫熼€?pending	23.1锛堝攼锛?Deepin 23.1锛堥粍锛?	
+C02	璁＄畻鏈?2	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樻浘鏀跺埌涓€浠藉厤璐归鍙杢oken鐨勯偖浠剁殑鐤戜技閽撻奔閭欢锛屽叾鍙戦€佺敤鎴烽偖绠变负	10	PC	MAIN	涓?pending	hf13338261292@outlook.com		
+C03	璁＄畻鏈?3	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴戜腑璁板綍鐨勯粍閲戞崲鐜伴噾鐨勫晢瀹惰仈绯绘柟寮忎负	11	PC	MAIN	涓?pending			
+C04	璁＄畻鏈?4	鍒嗘瀽璁＄畻鏈烘鏉愶紝鎺ㄥ箍璁捐鍥句腑鐨刟pk涓嬭浇閾炬帴涓?13	PC	MAIN	涓?pending			
+C05	璁＄畻鏈?5	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴憊pn杞欢寮€鏀剧殑浠ｇ悊绔彛涓?10	PC	MAIN	閫熼€?pending	7897		
+C06	璁＄畻鏈?6	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴戜腑AI杞欢褰撳墠浣跨敤鐨勬ā鍨嬬被鍨嬩负	11	PC	MAIN	涓?pending	OpenRouter		
+C07	璁＄畻鏈?7	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴戜腑AI杞欢褰撳墠浣跨敤鐨勬ā鍨媋piKey涓?12	PC	MAIN	涓?pending	sk-or-f501baaf5bb596698325272d2c1c80f4c389dccca0c969e93179c4bd9419676		
+C08	璁＄畻鏈?8	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴戜腑鍕掔储杞欢鎻愪緵鐨勮В瀵嗘湇鍔¤仈绯绘柟寮忎负	11	PC	MAIN	涓?pending			
+C09	璁＄畻鏈?9	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴戜腑璁板綍鐨勫瓨鏀鹃粍閲戠殑淇濋櫓鏌滅紪鍙锋槸	13	PC	MAIN	涓?pending	65537		
+C10	璁＄畻鏈?10	鍒嗘瀽璁＄畻鏈烘鏉愶紝鏉庡畨寮樼數鑴戜腑璁板綍鐨勪繚闄╂煖瀵嗙爜鏄?13	PC	MAIN	涓?pending	7h3_1nf0rm4t10n_1s_h1dd3n_1n_7h3_h3x_4nd_7h3_65537_1s_4_r3d_h3rr1ng		
+M01	鎵嬫満	1	鍒嗘瀽鎵嬫満妫€鏉愶紝璇ユ墜鏈哄瀷鍙蜂负	9	PHONE	PHONE	閫熼€?pending	Redmi Note 7 Pro	浠幝?data/system/packages.xml聽涓爒iolet聽鍖呭悕鎸囧悜 Redmi Note 7 Pro锛岀粨鍚?MIUI build 鍙?V12.5.4.0.QFHCNXM 楠岃瘉	
+M02	鎵嬫満	2	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻墜鏈鸿鍒掑墠寰€杩嫓鐨勬棩鏈熸槸	10	PHONE	PHONE	涓?pending	2026.06.06	灏忕背渚跨聽todo.db聽涓?sn_note 琛?content_content 瀛楁鍖呭惈"璁″垝2026.06.06鍓嶅線杩嫓"	
+M03	鎵嬫満	3	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻墜鏈轰腑涓庣綉绔欐惌寤轰汉鍛樻矡閫氭墍浣跨敤鐨刟pp瀹夎鏃ユ湡涓?11	PHONE	PHONE	涓?pending	2026-04-25 13:18:06	com.talk.uuuim锛圵uKong IM 鏀圭増锛夊湪聽packages.xml聽涓爁t/it/ut聽鏃堕棿鎴?0x19d8b6fd571 鈫?2026-04-14 18:00:55	
+M04	鎵嬫満	4	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻墜鏈轰腑涓庣綉绔欐惌寤轰汉鍛樻矡閫氭墍浣跨敤鐨刟pp锛屽瓨鏀捐亰澶╂暟鎹殑鏁版嵁搴撲负	12	PHONE	PHONE	涓?pending	wk_9628874a3c6b403593766496fa985893.db	WuKong IM SDK 鍛藉悕瑙勫垯聽wk_<uid>.db锛涚敤鎴?UID 鍦爓kSharedPreferences.xml聽涓负聽9628874a3c6b403593766496fa985893	
+M05	鎵嬫満	5	鍒嗘瀽鎵嬫満妫€鏉愶紝瀛樻斁鑱婂ぉ鏁版嵁鐨勬暟鎹簱鐨勮В瀵嗗瘑鐮佷负	13	PHONE	PHONE	楂?pending	9628874a3c6b403593766496fa985893	鍙嶇紪璇戝悓 SDK锛坈om.talk.uabchat锛塛KDBHelper锛歳elease 鐗?PRAGMA key = uid 瀛楃涓诧紱SQLCipher v4聽cipher_compatibility=4聽涓€娆¤В寮€ 1022 鏉℃秷鎭?
+M06	鎵嬫満	6	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樿喘涔颁簯鏈嶅姟鍣ㄥ晢瀹剁殑鏀舵澶囩敤閽卞寘鍦板潃涓?11	PHONE	PHONE	涓?pending	TN8vQzB3n7W5wVca9W4kL2wP7xY9zM5nU1	瑙ｅ瘑 wk_*.db 鍚庯紝channel銆屽ぇ鏃ヤ簯鏈嶅姟鍣ㄣ€峬sg #30 鏄庢枃缁欏嚭"杞处鍞簩鍦板潃鈥﹀鐢ㄨ浆璐﹀湴鍧€锛歍N8v鈥?	
+M07	鎵嬫満	7	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻墜鏈轰腑缁欑綉绔欐惌寤轰汉鍛樼涓€娆¤浆璐︾殑浜ゆ槗hash鍓?浣嶄负	10	PHONE	PHONE	涓?pending	26226f	缃戠珯寮€鍙?channel msg #45 涓鸿浆璐︽埅鍥撅紙9054354934843.png锛夛紝鏌ョ湅 TXID 涓郝?6226f766c42c9a30a0247d90dc7482e鈥︼紝鍓?浣嵚?6226f	
+M08	鎵嬫満	8	鍒嗘瀽鎵嬫満妫€鏉愶紝鎵嬫満涓娇鐢ㄧ殑AI杞欢鏉庡畨寮樹富鍔ㄥ悜AI鎻愰棶浜嗗嚑娆?11	PHONE	PHONE	涓?pending	5	pocketpalai.db聽涓燾onversationMessages聽琛?sender='user' 鍏?5 鏉★紙2026-04-15锛?
+M09	鎵嬫満	9	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻墜鏈轰娇鐢ㄧ殑AI杞欢璋冪敤鏈湴AI妯″瀷鍙婄増鏈负	12	PHONE	PHONE	涓?pending	Qwen3.5 0.8B (Q4_K_M)	鏈湴妯″瀷鏂囦欢聽models/qwen3.5-0.8b-q4_k_m.gguf锛圙GUF metadata 鈫?general.name=Qwen3.5 0.8B锛?
+M10	鎵嬫満	10	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻浘浣跨敤鏃犱汉鏈鸿埅鎷?鍒嗘瀽鍏堕琛岃建杩癸紝鍏跺湪鍝釜鍘胯繘琛岄琛?10	PHONE	PHONE	涓?pending	灞辫タ鐪佸悤姊佸競绂荤煶鍖?DJI Fly v5 椋炶璁板綍聽FlightRecord_*.txt聽涓?V12+ AES 鍔犲瘑鏍煎紡锛屾棤瑙ｅ瘑 key锛汥CIM/DJI Album 涓虹┖锛涘叏閮?cache log 鍔犲瘑鏃犲彲璇诲潗鏍?
+M11	鎵嬫満	11	鍒嗘瀽鎵嬫満妫€鏉愶紝鏉庡畨寮樻渶杩戝畨瑁呬簡涓€涓棰戠被APP锛岃APP澹版槑浜嗗涓晱鎰熸潈闄愮敤浜庢敹闆嗙敤鎴烽殣绉併€傝閫夋嫨鍏朵腑娑夊強鐢ㄦ埛闅愮鐨勬晱鎰熸潈闄愩€?11	PHONE	PHONE	涓?pending	READ_CONTACTS / READ_SMS / READ_CALL_LOG / READ_PHONE_STATE / ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION / CAMERA / R	jadx 鍙嶇紪璇懧燞otClub_v2.1.6.apk聽鈫捖燗ndroidManifest.xml聽涓?8 椤瑰嵄闄╂潈闄愶紙protectionLevel=dangerous锛?
+M12	鎵嬫満	12	涓婅堪APP鍚姩鍚庝細鍔犺浇涓€涓壊鎯呯綉绔欍€傝鎵惧嚭璇PP褰撶綉缁滀笉鍙敤鏃禔PP鍔犺浇鐨勬湰鍦扮绾块〉闈㈣矾寰勩€?12	PHONE	PHONE	涓?pending	file:///android_asset/www/index.html	MainActivity.onCreate()聽鍒ゆ柇聽networkConnected聽涓?false 鏃舵墽琛屄爓ebView.loadUrl("file:///android_asset/www/index.html")	
+M13	鎵嬫満	13	涓婅堪APP灏嗛潪娉曟敹闆嗙殑鐢ㄦ埛闅愮鏁版嵁涓婁紶鑷宠繙绋嬫湇鍔″櫒銆備笂浼犲湴鍧€鍦ㄤ唬鐮佷腑缁忚繃缂栫爜澶勭悊銆傝鎵惧嚭缂栫爜鏂瑰紡锛岃繕鍘熷嚭瀹屾暣鐨勪笂浼犳湇鍔″櫒URL銆?12	PHONE	PHONE	楂?pending	https://api.sp-live88.com/collect/userdata	DataUploader.java聽涓燘ase64.decode("aHR0cHM6Ly9hcGkuc3AtbGl2ZTg4LmNvbS9jb2xsZWN0L3VzZXJkYXRh",2)	
+M14	鎵嬫満	14	璇PP鍦ㄦ湰鍦板垱寤轰簡SQLite鏁版嵁搴撳瓨鍌ㄦ敹闆嗗埌鐨勭敤鎴蜂俊鎭€傝鍒嗘瀽浠ｇ爜锛屽啓鍑虹敤浜庡瓨鍌ㄧ敤鎴蜂俊鎭殑琛ㄥ悕	13	PHONE	PHONE	涓?pending	user_collection	hotclub_data.db聽schema锛欳REATE TABLE user_collection (_id INTEGER PRIMARY KEY, username TEXT, imei TEXT, contacts TEXT, l	
+M15	鎵嬫満	15	璇PP鐨刟ssets鐩綍涓瓨鍦ㄤ竴涓姞瀵嗛厤缃枃浠禼onfig.dat銆傝瑙ｅ瘑璇ユ枃浠讹紝鍐欏嚭鍏朵腑鐨刄SDT閽卞寘鍦板潃	14	PHONE	PHONE	楂?pending	TXqH7sVn8bR4kL2mN9pW6xJ3cY5dF1gA	assets/config.dat聽AES/ECB/PKCS5Padding 瑙ｅ瘑锛屽瘑閽?= MD5("hotclub_2026_sec") 鍓?6瀛楄妭锛涙槑鏂?JSON 涓?wallet":"TXqH7sVn8bR4kL2mN9pW6xJ	
+M16	鎵嬫満	16	璇PP鍓嶇JS浠ｇ爜鍙互鐩存帴璋冪敤Android鍘熺敓鏂规硶鑾峰彇鐢ㄦ埛闅愮鏁版嵁銆傝鍒嗘瀽鏆撮湶浜嗗摢浜涙柟娉曠敤浜庤幏鍙栭€氳褰曪紵	12	PHONE	PHONE	涓?pending	getContactsList	NativeBridge.java聽涓燖JavascriptInterface public String getContactsList()聽閫氳繃聽ContactsContract.CommonDataKinds.Phone.CONTE	
+M17	鎵嬫満	17	褰撲富涓婁紶鏈嶅姟鍣ㄤ笉鍙揪鏃讹紝APP浼氳幏鍙栧鐢ㄦ湇鍔″櫒鍦板潃銆傝鍒嗘瀽澶囩敤鏈嶅姟鍣ㄧ殑瀹屾暣鍩熷悕鍜岀鍙?14	PHONE	PHONE	涓?pending	backup.sp-live88.xyz:8443	libsecurity.so聽arm64 涓瓧绗︿覆缁?XTEA-64 杞紙key=DEADBEEF/CAFEBABE/12345678/9ABCDEF0锛? byte-XOR 瑙ｅ瘑锛岃緭鍑郝燽ackup.sp-live88.xyz:8443	
+S01	鏈嶅姟鍣?1	璇ユ湇鍔″櫒涓绘満鎿嶄綔绯荤粺鐗堟湰涓?9	SRV	MAIN	閫熼€?pending	Debian GNU/Linux 13 (trixie)		
+S02	鏈嶅姟鍣?2	璇ユ湇鍔″櫒鏍瑰垎鍖虹‖鐩樼殑uuid鍙蜂负	11	SRV	MAIN	閫熼€?pending	3231e52f-5e15-44c4-b224-e29cb4201c0e		
+S03	鏈嶅姟鍣?3	璇ユ湇鍔″櫒涓渶鏂扮殑docker闀滃儚鍒涘缓鏃堕棿涓?10	SRV	MAIN	涓?pending	2026-04-16 07:15:50 UTC		
+S04	鏈嶅姟鍣?4	璇ユ湇鍔″櫒鏍瑰垎鍖哄揩鐓ц矾寰勪负	11	SRV	MAIN	涓?pending	/root/history		
+S05	鏈嶅姟鍣?5	璇ョ綉绔欏悗鍙扮鐞嗗叆鍙ｅ搴旂殑鏂囦欢鍚嶄负	11	SRV	MAIN	涓?pending	user.php		
+S06	鏈嶅姟鍣?6	璇ョ綉绔欒缃殑icp澶囨鍙蜂负	10	SRV	MAIN	閫熼€?pending	icp1919810		
+S07	鏈嶅姟鍣?7	璇ョ綉绔欒缃殑涓诲煙鍚嶄负	12	SRV	MAIN	閫熼€?pending	www.2026fic.forensix		
+S08	鏈嶅姟鍣?8	璇ョ綉绔欏垎绫?涓紝瑙嗛鐨勬嫾闊充负	12	SRV	MAIN	涓?pending			
+S09	鏈嶅姟鍣?9	璇ョ珯鐐硅缃〉闈腑锛岃浣跨敤鐨勫墠绔ā鏉挎潵鑷簬鍝釜婧愭枃浠讹紵	13	SRV	MAIN	涓?pending	application/admin/view_new/system/config.html		
+S10	鏈嶅姟鍣?10	璇ョ綉绔欑殑浼潤鎬佽鍒欓厤缃枃浠秙m3鍊间负	12	SRV	MAIN	涓?pending	5a6c86366041509a0a9a31b72a341372182e00f4c9df6a6ae34cc5e779639c54		
+S11	鏈嶅姟鍣?11	璇ョ綉绔欏叧鑱旂殑鏁版嵁搴撶殑ip鍦板潃涓?11	SRV	MAIN	涓?pending	10.0.3.100		
+S12	鏈嶅姟鍣?12	璇ョ綉绔欐暟鎹簱浣跨敤浜嗗摢涓€绫诲鍣ㄦ妧鏈?10	SRV	MAIN	閫熼€?pending	LXC		
+S13	鏈嶅姟鍣?13	杩愯鍦?000绔彛鐨勫浠芥暟鎹簱鐗堟湰鍙蜂负	11	SRV	MAIN	涓?pending			
+S14	鏈嶅姟鍣?14	鏂版敞鍐岀敤鎴锋暟閲忔渶澶氱殑鏃ユ湡涓?11	SRV	MAIN	涓?pending			
+S15	鏈嶅姟鍣?15	椹収缇庢渶鍚庝竴娆＄櫥褰曡缃戠珯鐨刬p涓?12	SRV	MAIN	涓?pending			
+S16	鏈嶅姟鍣?16	浠ヤ笅鍝釜鏂囦欢绯荤粺鏈浣跨敤	12	SRV	MAIN	涓?pending	xfs		
+S17	鏈嶅姟鍣?17	璇ユ湇鍔″櫒瀹夎浜嗕互涓嬮偅浜涙暟鎹簱鏈嶅姟	13	SRV	MAIN	閫熼€?pending	PostgreSQL + TiDB		
+I01	浜掕仈缃?1	鍞崠鍗″瘑鐨勫叕寮€缇ょ粍ID涓?13	璺?MAIN	涓?pending			
+I02	浜掕仈缃?2	澶囦唤鏁版嵁搴撲腑瑙嗛鍥剧墖鐨勬枃浠跺悕涓?13	SRV	MAIN	涓?pending			
+I03	浜掕仈缃?3	ngrok鎻愪緵鐨勫煙鍚嶄负	14	璺?MAIN	涓?pending	blemish-junior-unengaged.ngrok-free.dev		
+B01	浜岃繘鍒?1	鍒嗘瀽u鐩樻鏉愶紝鎵惧埌鍏朵腑淇濆瓨鐨勫姞瀵嗙▼搴廠ampleVC.exe锛岃缁欏嚭杩欎釜exe绋嬪簭鐨刴d5鍊硷紵	9	USB	MAIN	閫熼€?pending	764789dd9c095d74b6b258cf0f7568b2		
+B02	浜岃繘鍒?2	鍒嗘瀽SampleVC.exe锛岃绋嬪簭缂栬瘧鐨勬棩鏈熷彲鑳芥槸浠€涔堬紵	10	USB	MAIN	閫熼€?pending	2026-04-17 13:53:20 +08:00		
+B03	浜岃繘鍒?3	鍒嗘瀽SampleVC.exe锛屾纭殑瀵嗙爜鏄粈涔堬紵	14	USB	MAIN	楂?pending	PleaseRunAsAdmin		
+B04	浜岃繘鍒?4	鍒嗘瀽u鐩樻鏉愶紝鍒╃敤SampleVC.exe瑙ｅ瘑U鐩樹腑琚姞瀵嗙殑鏂囦欢锛岃В瀵嗗悗鐨勬枃浠剁殑鍚庣紑鏄粈涔堬紵	12	USB	MAIN	楂?pending	vhd		
+B05	浜岃繘鍒?5	鍒嗘瀽u鐩樻鏉愶紝鎵惧埌琚姞瀵嗙殑浜ゆ槗璁板綍锛岀粺璁℃潕瀹夊紭铏氭嫙甯佹敹娆惧湴鍧€閽卞寘鎬绘敹娆鹃噾棰濅负	14	USB	MAIN	楂?pending	186948.09		
+
+=== Sheet: 鍒嗗伐姹囨€?===
+鏉垮潡	棰樻暟	鎬诲垎	鍒嗙粰	鍗犳瘮%
+璁＄畻鏈?10	113	MAIN	18.8%
+鎵嬫満	17	197	PHONE	32.8%
+鏈嶅姟鍣?17	191	MAIN	31.8%
+浜掕仈缃?3	40	MAIN	6.7%
+浜岃繘鍒?5	59	MAIN	9.8%
+				
+鍚堣	52	600	-	100%
+				
+MAIN	35	403	MAIN	67.2%
+PHONE	17	197	PHONE	32.8%
+

@@ -1,0 +1,116 @@
+# FIC2026 M01 — Phone Model Identification
+# Migrated from: cases/2026FIC电子取证/wp_batches/PHONE_M01-M05.md
+
+meta:
+  competition: "FIC2026"
+  competition_id: "2026fic"
+  question_id: "M01"
+  question_text: "分析手机检材，该手机型号为"
+  category_l1: "mobile_android"
+  category_l2: "app_data_extraction"
+  tags:
+    - "device_identification"
+    - "build_fingerprint"
+    - "xiaomi"
+    - "codename"
+  points: 9
+  difficulty: "easy"
+
+answer:
+  value: "Redmi Note 7 Pro"
+  value_type: "text"
+  confidence: "high"
+  verified: false
+  verified_method: "unverified"
+  verified_date: null
+
+walkthrough:
+  summary: "从 Android build fingerprint 文件识别设备代号 violet → Redmi Note 7 Pro"
+  steps:
+    - seq: 1
+      description: "Locate build fingerprint in Android data backup"
+      command: "cat {phone_extract}/data/misc/recovery/ro.build.fingerprint"
+      tool: "cat"
+      expected_output: "xiaomi/violet/violet:10/QKQ1.190915.002/..."
+      human_note: "Build fingerprint format: brand/codename/device:version/build/..."
+
+    - seq: 2
+      description: "Identify codename and map to marketing name"
+      command: null
+      tool: null
+      expected_output: "codename 'violet' = Redmi Note 7 Pro (public knowledge)"
+      human_note: "查 xiaomi codename 列表。violet = Redmi Note 7 Pro, lavender = Redmi Note 7"
+
+    - seq: 3
+      description: "Cross-validate with system user XML"
+      command: "grep lastLoggedInFingerprint {phone_extract}/data/system/users/0.xml"
+      tool: "grep"
+      expected_output: "Same fingerprint string containing 'violet'"
+      human_note: "Multiple sources should all point to the same device"
+
+    - seq: 4
+      description: "Cross-validate with Xiaomi account data"
+      command: "grep -rh fingerprint {phone_extract}/data/user/0/com.xiaomi.account/ | grep violet"
+      tool: "grep"
+      expected_output: "build_fingerprint containing 'violet'"
+      human_note: "Three independent sources confirming same device"
+
+  evidence_path: "手机检材.tar → data/misc/recovery/ro.build.fingerprint"
+
+tools_used:
+  - name: "cat"
+    version: "any"
+    platform: "linux"
+    install_script: null
+    install_path: "/usr/bin/cat"
+    alternative: null
+  - name: "grep"
+    version: "any"
+    platform: "linux"
+    install_script: null
+    install_path: "/usr/bin/grep"
+    alternative: null
+
+ai_meta:
+  first_solved_by: "claude-sonnet-4"
+  solve_time_seconds: 60
+  token_cost_usd: 0.10
+  model_difficulty: "trivial"
+  requires_gui: false
+  requires_internet: false
+
+education:
+  prerequisites:
+    - "Android 系统基础知识"
+    - "Android build fingerprint 格式"
+  learning_objectives:
+    - "了解 Android 设备识别方法 (build fingerprint)"
+    - "掌握 codename → 市售名称的映射方法"
+    - "学会三源交叉验证设备身份"
+  difficulty_for_human: "beginner"
+  estimated_learning_time: "10min"
+  guided_prompts:
+    - prompt: "这道题问手机型号。Android 系统中，设备型号信息存放在哪里？"
+      hints:
+        - "build.prop 和 build fingerprint 文件"
+        - "路径一般在 /data/misc/recovery/ 或 /system/build.prop"
+      answer_keywords: ["fingerprint", "build.prop", "recovery"]
+    - prompt: "你看到 build fingerprint 中的 'violet' 是什么？怎么知道它对应哪款手机？"
+      hints:
+        - "这是小米的设备代号 (codename)"
+        - "可以搜索 'xiaomi codename list' 查对应关系"
+      answer_keywords: ["violet", "Redmi Note 7 Pro", "codename"]
+  common_mistakes:
+    - mistake: "把 codename 'violet' 直接当答案"
+      correction: "codename 是内部代号，题目问的是市售型号名称"
+    - mistake: "混淆 Redmi Note 7 和 Redmi Note 7 Pro"
+      correction: "violet = Pro 版, lavender = 普通版, 注意区分"
+  related_questions:
+    - "2026fic/C01"
+  knowledge_refs: []
+
+status:
+  progress: "complete"
+  human_reviewed: false
+  last_updated: "2026-04-28"
+  notes: "Migrated from PHONE_M01-M05.md. High quality walkthrough with 3-source validation."

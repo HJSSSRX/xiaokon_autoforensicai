@@ -1,0 +1,143 @@
+# ForensicAI Knowledge Pack Manifest
+# This file describes the training data pack and its requirements.
+# After bootstrap downloads the knowledge pack, it reads this manifest
+# to auto-install required tools and configure the environment.
+
+version: "0.2.0"
+pack_name: "forensicai-knowledge-base"
+description: "FIC2026 + historical competition knowledge, solved patterns, and writeup indices"
+last_updated: "2026-04-28"
+
+# === Data contents ===
+# Lists what this knowledge pack provides
+contents:
+  solved_questions:
+    path: "knowledge/solved/"
+    description: "Structured YAML question database (per-competition)"
+    entries:
+      - competition: "2026fic"
+        count: 5   # will grow
+        path: "knowledge/solved/2026fic/"
+
+  solved_patterns:
+    path: "AI_BRAIN/solved_patterns/"
+    description: "Verified solution patterns for common forensic tasks"
+    count: 8
+
+  wp_index:
+    path: "knowledge/wp_index/"
+    description: "Historical competition writeup indices (8 competitions)"
+    count: 8
+
+  reference_case:
+    path: "share/reference_case/"
+    description: "FIC2026 reference case with full wp_batches"
+
+# === Tool requirements ===
+# Tools that must be installed for the knowledge to be actionable.
+# bootstrap.ps1 reads this and installs missing tools.
+
+required_tools:
+
+  # --- Linux/WSL tools ---
+  linux:
+    - name: "sqlite3"
+      check_command: "sqlite3 --version"
+      install_command: "sudo apt-get install -y sqlite3"
+      priority: "critical"
+
+    - name: "sleuthkit"
+      check_command: "mmls -V"
+      install_command: "sudo apt-get install -y sleuthkit"
+      priority: "critical"
+
+    - name: "exiftool"
+      check_command: "exiftool -ver"
+      install_command: "sudo apt-get install -y libimage-exiftool-perl"
+      priority: "high"
+
+    - name: "radare2"
+      check_command: "r2 -v"
+      install_command: "sudo apt-get install -y radare2"
+      priority: "medium"
+
+    - name: "jadx"
+      check_command: "jadx --version"
+      install_command: "# manual: download from https://github.com/skylot/jadx/releases"
+      priority: "medium"
+
+    - name: "hashcat"
+      check_command: "hashcat --version"
+      install_command: "sudo apt-get install -y hashcat"
+      priority: "medium"
+
+    - name: "volatility3"
+      check_command: "vol -h"
+      install_command: "pip install volatility3"
+      priority: "low"
+
+  # --- Python packages ---
+  python:
+    - name: "pycryptodomex"
+      check_command: "python3 -c 'from Cryptodome.Cipher import AES'"
+      install_command: "pip install pycryptodomex"
+
+    - name: "openpyxl"
+      check_command: "python3 -c 'import openpyxl'"
+      install_command: "pip install openpyxl"
+
+    - name: "faiss-cpu"
+      check_command: "python3 -c 'import faiss'"
+      install_command: "pip install faiss-cpu"
+      note: "Required for RAG mode A vector index"
+
+    - name: "sentence-transformers"
+      check_command: "python3 -c 'from sentence_transformers import SentenceTransformer'"
+      install_command: "pip install sentence-transformers"
+      note: "Required for RAG mode A embedding"
+
+  # --- Windows tools ---
+  windows:
+    - name: "7zip"
+      check_command: "7z"
+      install_command: "winget install 7zip.7zip"
+      priority: "critical"
+
+    - name: "git"
+      check_command: "git --version"
+      install_command: "winget install Git.Git"
+      priority: "critical"
+
+    - name: "Zimmerman Tools"
+      check_command: "where RECmd.exe"
+      install_command: "# manual: download from https://ericzimmerman.github.io/"
+      priority: "high"
+      note: "RECmd, MFTECmd, EvtxECmd, PECmd, Timeline Explorer"
+
+# === Post-install actions ===
+# Steps to run after tools are installed
+post_install:
+  - description: "Build RAG vector index from knowledge/solved/"
+    command: "python3 scripts/build_rag_index.py"
+    when: "mode_a_rag"
+    optional: true
+
+  - description: "Verify all tools are working"
+    command: "bash install/05_verify_all.sh"
+    optional: false
+
+# === Data sources ===
+# Where to download this knowledge pack from
+sources:
+  github:
+    repo: "YOUR_USERNAME/forensicai-knowledge"   # TODO: fill after repo creation
+    branch: "main"
+    type: "git_clone"
+
+  release:
+    url: "https://github.com/YOUR_USERNAME/forensicai-knowledge/releases/latest"
+    type: "zip_download"
+
+  local:
+    path: "./knowledge-pack.zip"
+    type: "local_zip"

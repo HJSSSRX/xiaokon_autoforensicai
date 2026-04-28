@@ -1,0 +1,40 @@
+# 工具和 venv：体积大，各机本地装
+tools/
+.venv/
+.venv-path
+__pycache__/
+*.pyc
+
+# 检材：只读、巨大、不 push
+*.E01
+*.dd
+*.vmdk
+*.vhd
+*.pcap
+*.pcapng
+*.zip
+*.7z
+*.tar
+*.img
+*.vmem
+*.raw
+
+# 比赛目录：默认全忽略，只白名单关键文档参与协作
+cases/*
+!cases/.keep
+!cases/*/wp_batches/
+!cases/*/questions.md
+!cases/*/answers.md
+!cases/*/answers_summary.md
+!cases/*/handover.md
+!cases/*/TASKS.md
+!cases/*/NOTES.md
+!cases/*/README.md
+
+# 中间产物（每机本地）
+cases/*/artifacts/
+cases/*/evidence/
+cases/*/.venv/
+
+# AI 顾问输出（每次咨询的 md，本地参考用）
+output/
