@@ -1,0 +1,9 @@
+# AutoForensicAI
+
+When the user says "小空自己动", read `prompts/main.md` and follow its instructions to enter Main Designer mode.
+
+Key rules:
+- Search `knowledge/solved/` before solving anything (grep by tags)
+- Use CLI tools directly, not MCP (nmap, vol3, strings, tshark, sqlmap, etc.)
+- Every session must produce a `knowledge/solved/*.md` solution file
+- Multi-agent coordination via `shared/` directory (YAML files)

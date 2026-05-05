@@ -1,0 +1,15 @@
+- id: F001
+  time: "2026-05-05 21:15"
+  from: stego_crypto_analyst
+  type: evidence
+  summary: "PNG tEXt chunk contains Base64-encoded flag"
+  detail: "tEXt Comment field: 'Check this: ZmxhZ3t4aWFva29uZ19waXBlbGluZV93b3Jrc18yMDI2fQ=='\nDecoded: flag{xiaokong_pipeline_works_2026}"
+  related_to: []
+
+- id: F002
+  time: "2026-05-05 21:16"
+  from: stego_crypto_analyst
+  type: evidence
+  summary: "Trailing hex data after PNG IEND marker also contains flag"
+  detail: "Hex: 666c61677b7869616f6b6f6e675f706970656c696e655f776f726b735f323032367d\nDecoded: flag{xiaokong_pipeline_works_2026}"
+  related_to: []

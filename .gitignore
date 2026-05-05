@@ -1,0 +1,27 @@
+# Reference repos (large, not part of the project)
+references/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Runtime artifacts
+shared/*.yaml
+tests/test_challenge/evidence.png
+tests/test_challenge/output/
+
+# Temp
+*.tmp
+*.bak
