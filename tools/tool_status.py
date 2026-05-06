@@ -60,6 +60,29 @@ def check_tool(tool_def):
         if os.path.exists(expanded):
             return True, expanded
 
+    # Try WSL for tools with wsl install method
+    installs = tool_def.get("install") or []
+    has_wsl = any(isinstance(i, dict) and i.get("type") == "wsl" for i in installs)
+    if has_wsl and check_cmd:
+        try:
+            if check_cmd.startswith("python"):
+                wsl_cmd = check_cmd.replace("python", "python3", 1)
+                result = subprocess.run(
+                    ["wsl", "-e", "bash", "-c", wsl_cmd],
+                    capture_output=True, timeout=5, text=True
+                )
+            else:
+                exe = check_cmd.split()[0]
+                result = subprocess.run(
+                    ["wsl", "-e", "which", exe],
+                    capture_output=True, timeout=5, text=True
+                )
+            if result.returncode == 0:
+                path = result.stdout.strip() or check_cmd.split()[0]
+                return True, f"WSL:{path}"
+        except Exception:
+            pass
+
     return False, None
 
 

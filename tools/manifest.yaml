@@ -157,6 +157,8 @@ python_packages:
     roles: [pentest, reverse]
     check_cmd: "python -c \"import pwn\""
     install:
+      - type: wsl
+        package: pwntools
       - type: pip
         package: pwntools
 
@@ -356,6 +358,8 @@ stego_crypto:
     roles: [stego_crypto, pentest]
     check_cmd: "john --help"
     install:
+      - type: wsl
+        package: john
       - type: scoop
         package: john-the-ripper
       - type: manual
