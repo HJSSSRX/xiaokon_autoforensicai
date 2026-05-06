@@ -66,17 +66,91 @@ def parse_frontmatter(filepath):
     return fm, body
 
 
-def search_by_tags(kb_root, tags):
-    """Search solved/ for files matching any of the given tags."""
-    results = []
+def parse_yaml_solution(filepath):
+    """Parse a per-question YAML solution file (e.g. knowledge/solved/<comp>/<qid>.yaml).
+
+    Supports both flat and nested layouts (e.g. meta.tags / meta.category_l1).
+    Falls back to regex extraction if PyYAML is unavailable or parsing fails.
+    Returns (fm_dict, body_text) or (None, "") on read error.
+    """
+    try:
+        content = Path(filepath).read_text(encoding="utf-8")
+    except Exception:
+        return None, ""
+
+    fm = {"tags": [], "tools": [], "category": "", "verified": None}
+
+    try:
+        import yaml  # type: ignore
+        data = yaml.safe_load(content)
+        if isinstance(data, dict):
+            meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+            ans = data.get("answer") if isinstance(data.get("answer"), dict) else {}
+            fm["tags"] = meta.get("tags") or data.get("tags") or []
+            fm["tools"] = data.get("tools") or meta.get("tools") or []
+            fm["category"] = (
+                meta.get("category_l1") or meta.get("category") or data.get("category") or ""
+            )
+            fm["verified"] = ans.get("verified", data.get("verified"))
+            # Coerce singletons to lists
+            if isinstance(fm["tags"], str):
+                fm["tags"] = [fm["tags"]]
+            if isinstance(fm["tools"], str):
+                fm["tools"] = [fm["tools"]]
+            return fm, content
+    except Exception:
+        pass
+
+    # Regex fallback (works without PyYAML)
+    for m in re.finditer(r'tags:\s*\[([^\]]+)\]', content):
+        fm["tags"].extend(
+            [t.strip().strip("'\"") for t in m.group(1).split(",") if t.strip()]
+        )
+    for m in re.finditer(r'tools:\s*\[([^\]]+)\]', content):
+        fm["tools"].extend(
+            [t.strip().strip("'\"") for t in m.group(1).split(",") if t.strip()]
+        )
+    cat_m = re.search(r'category(?:_l1)?:\s*["\']?([\w_]+)', content)
+    if cat_m:
+        fm["category"] = cat_m.group(1)
+    return fm, content
+
+
+def _is_template(path):
+    """Skip _TEMPLATE.md, .gitkeep, leading-underscore files."""
+    name = path.name
+    return name.startswith("_") or name == ".gitkeep"
+
+
+def iter_solved_entries(kb_root):
+    """Yield (path, fm, body) for every solved entry, recursively.
+
+    Supports both .md (with frontmatter) and .yaml (per-question) formats.
+    Skips template/placeholder files.
+    """
     solved_dir = kb_root / "solved"
     if not solved_dir.exists():
-        return results
-
-    for f in solved_dir.glob("*.md"):
+        return
+    for f in solved_dir.rglob("*.md"):
+        if _is_template(f):
+            continue
         fm, body = parse_frontmatter(f)
         if fm is None:
             continue
+        yield f, fm, body
+    for f in solved_dir.rglob("*.yaml"):
+        if _is_template(f):
+            continue
+        fm, body = parse_yaml_solution(f)
+        if fm is None:
+            continue
+        yield f, fm, body
+
+
+def search_by_tags(kb_root, tags):
+    """Search solved/ (recursively, .md+.yaml) for files matching any tag."""
+    results = []
+    for f, fm, body in iter_solved_entries(kb_root):
         file_tags = fm.get("tags", [])
         if isinstance(file_tags, str):
             file_tags = [file_tags]
@@ -86,16 +160,9 @@ def search_by_tags(kb_root, tags):
 
 
 def search_by_tools(kb_root, tools):
-    """Search solved/ for files that used specific tools."""
+    """Search solved/ (recursively, .md+.yaml) for files using given tools."""
     results = []
-    solved_dir = kb_root / "solved"
-    if not solved_dir.exists():
-        return results
-
-    for f in solved_dir.glob("*.md"):
-        fm, body = parse_frontmatter(f)
-        if fm is None:
-            continue
+    for f, fm, body in iter_solved_entries(kb_root):
         file_tools = fm.get("tools", [])
         if isinstance(file_tools, str):
             file_tools = [file_tools]
@@ -105,7 +172,7 @@ def search_by_tools(kb_root, tools):
 
 
 def search_by_text(kb_root, query):
-    """Full-text search across solved/ and skills/."""
+    """Full-text search across solved/ (md+yaml), skills/, cards/."""
     results = []
     query_lower = query.lower()
 
@@ -113,7 +180,13 @@ def search_by_text(kb_root, query):
         search_dir = kb_root / subdir
         if not search_dir.exists():
             continue
-        for f in search_dir.rglob("*.md"):
+        patterns = ["*.md", "*.yaml"] if subdir == "solved" else ["*.md"]
+        files = []
+        for pat in patterns:
+            files.extend(search_dir.rglob(pat))
+        for f in files:
+            if _is_template(f):
+                continue
             try:
                 content = f.read_text(encoding="utf-8")
             except Exception:
@@ -131,33 +204,24 @@ def search_by_text(kb_root, query):
 
 
 def search_by_category(kb_root, category):
-    """Search solved/ for files in a specific category."""
+    """Search solved/ (recursively, .md+.yaml) for entries in a category."""
     results = []
-    solved_dir = kb_root / "solved"
-    if not solved_dir.exists():
-        return results
-
-    for f in solved_dir.glob("*.md"):
-        fm, body = parse_frontmatter(f)
-        if fm is None:
-            continue
-        if fm.get("category", "").lower() == category.lower():
+    for f, fm, body in iter_solved_entries(kb_root):
+        if str(fm.get("category", "")).lower() == category.lower():
             results.append((f, fm, body[:200]))
     return results
 
 
 def list_all(kb_root):
-    """List all knowledge base entries."""
+    """List all knowledge base entries (recursively, .md+.yaml)."""
     print("=== Solved Solutions ===")
-    solved_dir = kb_root / "solved"
-    if solved_dir.exists():
-        for f in sorted(solved_dir.glob("*.md")):
-            fm, _ = parse_frontmatter(f)
-            if fm:
-                tags = ", ".join(fm.get("tags", []))
-                print(f"  {f.stem}: [{fm.get('category', '?')}] tags={tags}")
-            else:
-                print(f"  {f.stem}")
+    entries = sorted(iter_solved_entries(kb_root), key=lambda x: str(x[0]))
+    for f, fm, _ in entries:
+        rel = f.relative_to(kb_root / "solved")
+        tags = ", ".join(str(t) for t in (fm.get("tags") or []))
+        cat = fm.get("category") or "?"
+        print(f"  {rel}: [{cat}] tags={tags}")
+    print(f"  ({len(entries)} entries total)")
 
     print("\n=== Skills ===")
     skills_dir = kb_root / "skills"

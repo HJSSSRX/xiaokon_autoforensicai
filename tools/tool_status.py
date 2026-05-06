@@ -21,6 +21,28 @@ SCRIPT_DIR = Path(__file__).parent
 MANIFEST_PATH = SCRIPT_DIR / "manifest.yaml"
 
 
+def _decode_subprocess_output(raw):
+    """Robust decode for subprocess byte output.
+
+    Handles WSL.exe quirk: ``wsl.exe`` on Windows defaults to UTF-16 LE + BOM
+    on stdout, which crashes ``text=True`` decoding under Chinese (gbk) locales
+    with ``UnicodeDecodeError: 0xff``.
+    """
+    if not raw:
+        return ""
+    if raw[:2] == b"\xff\xfe":
+        try:
+            return raw.decode("utf-16-le", errors="replace").lstrip("\ufeff")
+        except Exception:
+            pass
+    if raw[:3] == b"\xef\xbb\xbf":
+        return raw[3:].decode("utf-8", errors="replace")
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("gbk", errors="replace")
+
+
 def load_manifest():
     try:
         import yaml
@@ -40,7 +62,7 @@ def check_tool(tool_def):
     if check_cmd:
         exe = check_cmd.split()[0]
         if exe == "python":
-            # Python import check
+            # Python import check (bytes mode -> no decode crash)
             try:
                 result = subprocess.run(
                     check_cmd, shell=True, capture_output=True, timeout=10
@@ -69,16 +91,17 @@ def check_tool(tool_def):
                 wsl_cmd = check_cmd.replace("python", "python3", 1)
                 result = subprocess.run(
                     ["wsl", "-e", "bash", "-c", wsl_cmd],
-                    capture_output=True, timeout=5, text=True
+                    capture_output=True, timeout=5,
                 )
             else:
                 exe = check_cmd.split()[0]
                 result = subprocess.run(
                     ["wsl", "--", "bash", "-lc", f"which {exe}"],
-                    capture_output=True, timeout=5, text=True
+                    capture_output=True, timeout=5,
                 )
             if result.returncode == 0:
-                path = result.stdout.strip() or check_cmd.split()[0]
+                stdout_text = _decode_subprocess_output(result.stdout)
+                path = stdout_text.strip() or check_cmd.split()[0]
                 return True, f"WSL:{path}"
         except Exception:
             pass
