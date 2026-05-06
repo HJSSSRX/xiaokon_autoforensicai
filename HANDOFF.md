@@ -1,6 +1,48 @@
 # AutoForensicAI v2 — 交接文档
 
-> 最后更新: 2026-05-05 21:34
+> 最后更新: 2026-05-06 12:54
+
+---
+
+## 零、紧急交接摘要 (2026-05-06)
+
+### 当前状态
+**2024FIC 决赛 · 计算机取证板块: 15/15 题全部独立解出 ✅ (100%)**
+
+Excel 报告: `E:\ffffff-JIANCAI\2024FIC决赛\2024FIC_解题报告.xlsx`
+KB 验证报告: `knowledge/solved/2024fic_training_validation.md`
+
+### 核心工具链
+- **`tools/e01_reader.py`** — E01/NTFS 镜像读取 (dissect库, Python 3.10)
+  - 命令: `& "C:\Program Files\Python310\python.exe" tools/e01_reader.py -p 2 <cmd> <image> <path>`
+  - 支持: info, partitions, ls, cat, extract, hash, search
+- **exiftool**: `D:\ffffffff\fireeyes\证据分析\GoldenEyesV4\exiftool.exe`
+- **Python 3.10**: `C:\Program Files\Python310\python.exe` (dissect, openpyxl, msoffcrypto, xlrd, olefile)
+- **Python 3.x**: `C:\Program Files\python\python.exe` (通用)
+
+### 2024FIC 检材位置
+- `E:\ffffff-JIANCAI\2024FIC决赛\PersonalPC.E01` — 个人电脑 (60GB, NTFS, 分区2)
+- `E:\ffffff-JIANCAI\2024FIC决赛\sys.E01` — PVE 系统盘 (30GB, LVM/Linux)
+- `E:\ffffff-JIANCAI\2024FIC决赛\data.E01` — PVE 数据盘 (200GB, Linux)
+- `E:\ffffff-JIANCAI\2024FIC决赛\extracted\` — 已提取文件目录
+
+### 2024FIC 剩余板块 (5个, 共 53 题)
+| 板块 | 题数 | CLI可做性 | 障碍 |
+|---|---|---|---|
+| 板块2: PVE虚拟化 | 10 | 中 | sys.E01 是 LVM, e01_reader 暂不支持 Linux LVM/ext4. 脚本 `parse_pve_lvm.py` 已写好但未跑通 |
+| 板块3: OpenWrt路由 | 10 | 高 | PersonalPC 桌面有 `backup-OpenWrt-*.tar.gz`, 提取后可分析大部分配置. MobaXterm.ini 有密码 |
+| 板块4: 云手机 | 10 | 低 | 需启动 PVE VM + Docker 容器, CLI 几乎无法完成 |
+| 板块5: 服务器取证 | 14 | 中 | 部分可从 data.E01 提取 qcow2 做哈希; 其余需启动 VM |
+| 板块6: 数据分析 | 9 | 低 | 需重建网站 + MySQL, 依赖板块5 |
+
+### 后台任务 (可能仍在运行)
+- Command 501: 搜索 PersonalPC 中的 .tar.gz 文件
+- Command 506: parse_pve_lvm.py 解析 PVE LVM
+
+### 用户偏好 (新增)
+- **报告必须附带 Excel (.xlsx)** — 每次汇报都要 openpyxl 生成表格
+- **长任务放后台** — 绝不卡住等结果, 用 Blocking=false + WaitMsBeforeAsync=2000, 立刻做其他事
+- **避免串行等待** — 并行发命令, 后面统一收结果
 
 ---
 

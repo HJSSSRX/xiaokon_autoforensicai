@@ -35,11 +35,24 @@ git clone https://github.com/HJSSSRX/xiaokon_autoforensicai.git forhacker
 cd forhacker
 ```
 
-### 2. 检查工具环境
+### 2. 一键部署工具
 
 ```powershell
-.\bootstrap.ps1 -Check
+.\install.ps1              # 安装所有工具（scoop + pip + winget）
+.\install.ps1 -Check       # 只检查，不安装
+.\install.ps1 -Docker      # 额外拉取 Docker 镜像（Kali, REMnux, SIFT）
+.\install.ps1 -WSL         # 额外安装 WSL 工具（steghide, foremost...）
+.\install.ps1 -Role pentest # 只安装渗透测试工具
 ```
+
+查看工具状态：
+```powershell
+python tools\tool_status.py            # 查看全部
+python tools\tool_status.py --missing  # 只看缺少的
+python tools\tool_status.py --find tshark  # 找具体工具路径
+```
+
+工具清单统一维护在 `tools/manifest.yaml`，新增工具只需加一条记录。
 
 ### 3. 用你的 AI 打开项目目录
 
@@ -94,10 +107,15 @@ forhacker/
 │   └── cards/                   #   从外部资源提取的知识卡
 │
 ├── tools/
-│   └── kb_search.py             # 知识库搜索工具 (支持中英文自然语言查询)
+│   ├── manifest.yaml           # 工具清单（唯一真相源）
+│   ├── tool_status.py          # 查询工具安装状态 + 路径
+│   ├── kb_search.py            # 知识库搜索 (支持中英文自然语言查询)
+│   ├── collab_sync.py          # 协作同步 (Git + LAN)
+│   └── e01_reader.py           # E01/VMDK 镜像读取器
 │
 ├── shared/                      # 运行时多角色协作目录 (YAML 文件)
-├── bootstrap.ps1                # 工具环境检查脚本
+├── install.ps1                  # 一键部署脚本（读 manifest 自动安装）
+├── bootstrap.ps1                # (旧版) 工具环境检查脚本
 ├── tests/                       # 端到端测试
 │
 ├── CLAUDE.md                    # Claude Code 触发入口
@@ -168,16 +186,23 @@ python tools/kb_search.py --ask "how to find SQL injection"
 
 ## 多 Agent 协作
 
-在比赛模式下，多个 AI 窗口通过 `shared/` 目录的 YAML 文件交换信息：
+在比赛模式下，多个 AI 通过 `shared/` 目录的 YAML 文件交换信息，支持三种模式：
+
+| 模式 | 场景 | 命令 |
+|---|---|---|
+| **单机多窗口** | 同一台电脑多个 AI 窗口 | 直接读写 shared/ |
+| **Git 同步** | 有互联网，多台电脑 | `python tools/collab_sync.py git-push/pull` |
+| **LAN 同步** | 断网/局域网 | `python tools/collab_sync.py lan-serve/pull/push` |
 
 | 文件 | 用途 | 写入方 |
 |---|---|---|
 | `findings.yaml` | 证据发现（追加写入） | 所有角色 |
+| `answers.yaml` | 答案汇总表 | 主设计师 |
 | `questions.yaml` | 跨角色提问与回答 | 所有角色 |
 | `timeline.yaml` | 统一事件时间线 | 所有角色 |
 | `progress.yaml` | 各角色工作进度 | 各角色更新自己 |
 
-小空（Main Designer）定期读取这些文件，协调全局策略。
+小空（Main Designer）主动监控进度、维护答案表、路由跨角色线索、调整策略。
 
 ---
 
@@ -195,7 +220,8 @@ python tools/kb_search.py --ask "how to find SQL injection"
 | 隐写/密码 | steghide, zsteg, john, hashcat, openssl |
 | 逆向工程 | Ghidra, Radare2 |
 
-用 `bootstrap.ps1` 一键检查所有工具的安装状态。
+用 `install.ps1` 一键部署，用 `python tools/tool_status.py` 查看状态和路径。
+工具清单维护在 `tools/manifest.yaml`。
 
 ---
 

@@ -2,9 +2,20 @@
 
 This is a digital forensics and security automation project powered by AI multi-agent coordination.
 
+> **Coding principles**: Follow `E:\项目\andrej-karpathy-skills-main\CLAUDE.md`
+> Think before coding · Simplicity first · Surgical changes · Goal-driven execution
+
 ## Quick Start
 
 When the user says **"小空自己动"**, read and follow the instructions in `prompts/main.md` to enter Main Designer mode.
+
+## First-Time Setup
+
+```powershell
+.\install.ps1           # Install all tools (reads tools/manifest.yaml)
+.\install.ps1 -Check    # Check status only
+python tools\tool_status.py  # Query what's installed and where
+```
 
 ## Project Structure
 
@@ -15,7 +26,12 @@ knowledge/
   skills/          — Per-role skill files (techniques, tool usage)
   cards/           — Extracted knowledge cards from external sources
 shared/            — Runtime cross-role coordination (findings, timeline, questions)
-tools/             — Helper scripts (install, search, training)
+tools/
+  manifest.yaml    — Tool manifest (single source of truth)
+  tool_status.py   — Query tool availability + paths
+  kb_search.py     — Knowledge base search
+  collab_sync.py   — Cross-machine collaboration (Git + LAN)
+  e01_reader.py    — E01/VMDK image reader
 ```
 
 ## Key Rules
@@ -25,3 +41,4 @@ tools/             — Helper scripts (install, search, training)
 3. **Document everything**: Every session must produce a `knowledge/solved/*.md` file
 4. **Coordinate via files**: Use `shared/` directory for multi-agent communication
 5. **Consultant mode**: User can ask forensics/security questions anytime — search KB and answer from existing knowledge
+6. **Tool paths**: Run `python tools/tool_status.py --find <tool>` to get exact paths for tools not in PATH

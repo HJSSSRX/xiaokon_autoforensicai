@@ -1,6 +1,45 @@
-# Collaboration Protocol — Shared Directory Convention
+# Collaboration Protocol — Local + Cross-Machine Sync
 
-All multi-agent coordination happens through the `shared/` directory in the case workspace. No special software needed — just read and write YAML files.
+All multi-agent coordination happens through the `shared/` directory in the case workspace. Files are plain YAML — no special software needed.
+
+## Sync Modes
+
+### Mode A: Single Machine (multiple windows)
+All AI windows read/write the same local `shared/` directory. No sync needed.
+
+### Mode B: Internet (GitHub)
+A case repo on GitHub holds the `shared/` directory. Each machine clones it.
+```
+# First time (Main Designer runs this once):
+python tools/collab_sync.py git-init <case_dir> --repo https://github.com/team/case_xxx.git
+
+# Each role does this periodically:
+python tools/collab_sync.py git-pull <case_dir>       # before reading
+python tools/collab_sync.py git-push <case_dir> -m "mobile: found trojan"  # after writing
+```
+
+### Mode C: LAN (air-gapped / competition network)
+One machine runs a simple HTTP sync server. Others pull/push via HTTP.
+```
+# On the "hub" machine (e.g., Main Designer's PC):
+python tools/collab_sync.py lan-serve <case_dir> --port 9999
+
+# On other machines:
+python tools/collab_sync.py lan-pull <case_dir> --server 192.168.1.100:9999
+python tools/collab_sync.py lan-push <case_dir> --server 192.168.1.100:9999
+```
+
+## CLI Shortcuts for Roles
+```
+# Post a finding (any mode):
+python tools/collab_sync.py post <case_dir> --from mobile_analyst --summary "Trojan MD5=ABC" --detail "..." --related server_analyst
+
+# Check overall status:
+python tools/collab_sync.py status <case_dir>
+
+# View answers table:
+python tools/collab_sync.py answers <case_dir>
+```
 
 ## File Formats
 

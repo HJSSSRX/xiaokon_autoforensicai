@@ -1,0 +1,459 @@
+# AutoForensicAI Tool Manifest
+# This is the single source of truth for all tools used by the project.
+# install.ps1 reads this file to auto-install tools.
+# tool_status.py reads this file to report tool availability.
+#
+# install_methods (tried in order):
+#   scoop   — preferred, no admin needed
+#   pip     — Python packages
+#   winget  — Windows Package Manager (needs admin)
+#   docker  — Docker image (for Linux-only tools)
+#   wsl     — WSL apt install (for Linux-only tools)
+#   manual  — download URL, user installs manually
+#
+# Karpathy rules reference: E:\项目\andrej-karpathy-skills-main\CLAUDE.md
+
+meta:
+  version: "1.0"
+  karpathy_rules: "E:\\项目\\andrej-karpathy-skills-main\\CLAUDE.md"
+  scoop_buckets:
+    - main
+    - extras
+    - versions
+
+# ─────────────────────────────────────────
+# CORE — every role needs these
+# ─────────────────────────────────────────
+core:
+  python3:
+    description: "Python interpreter"
+    check_cmd: "python --version"
+    install:
+      - type: scoop
+        package: python
+      - type: winget
+        id: Python.Python.3.12
+    known_paths:
+      - "C:\\Python312\\python.exe"
+      - "~/scoop/apps/python/current/python.exe"
+
+  7zip:
+    description: "Archive tool (extract E01/VMDK/ZIP/APK/BAK)"
+    check_cmd: "7z"
+    install:
+      - type: scoop
+        package: 7zip
+      - type: winget
+        id: 7zip.7zip
+    known_paths:
+      - "C:\\Program Files\\7-Zip\\7z.exe"
+      - "~/scoop/apps/7zip/current/7z.exe"
+
+  git:
+    description: "Version control (required for collaboration)"
+    check_cmd: "git --version"
+    install:
+      - type: scoop
+        package: git
+      - type: winget
+        id: Git.Git
+
+  strings:
+    description: "Extract printable strings from binaries"
+    check_cmd: "strings --version"
+    install:
+      - type: scoop
+        package: strings
+        bucket: extras
+      - type: manual
+        url: "https://learn.microsoft.com/en-us/sysinternals/downloads/strings"
+    known_paths:
+      - "D:\\bianchen\\x86_64-13.1.0-release-win32-seh-msvcrt-rt_v11-rev1\\mingw64\\bin\\strings.EXE"
+      - "~/scoop/apps/strings/current/strings.exe"
+
+  curl:
+    description: "HTTP client (built into Windows 10+)"
+    check_cmd: "curl --version"
+    install: []
+
+# ─────────────────────────────────────────
+# PYTHON PACKAGES — installed via pip
+# ─────────────────────────────────────────
+python_packages:
+  volatility3:
+    description: "Memory forensics framework"
+    roles: [computer]
+    check_cmd: "python -c \"import volatility3\""
+    install:
+      - type: pip
+        package: volatility3
+
+  pycryptodome:
+    description: "Cryptographic toolkit"
+    roles: [all]
+    check_cmd: "python -c \"from Crypto.Cipher import AES\""
+    install:
+      - type: pip
+        package: pycryptodome
+
+  pillow:
+    description: "Image processing"
+    roles: [all]
+    check_cmd: "python -c \"from PIL import Image\""
+    install:
+      - type: pip
+        package: Pillow
+
+  python-registry:
+    description: "Windows registry hive parser"
+    roles: [computer]
+    check_cmd: "python -c \"from Registry import Registry\""
+    install:
+      - type: pip
+        package: python-registry
+
+  oletools:
+    description: "MS Office document analysis"
+    roles: [computer]
+    check_cmd: "python -c \"import oletools\""
+    install:
+      - type: pip
+        package: oletools
+
+  exifread:
+    description: "EXIF metadata reader"
+    roles: [mobile, computer]
+    check_cmd: "python -c \"import exifread\""
+    install:
+      - type: pip
+        package: exifread
+
+  openpyxl:
+    description: "Excel file generation"
+    roles: [all]
+    check_cmd: "python -c \"import openpyxl\""
+    install:
+      - type: pip
+        package: openpyxl
+
+  pyyaml:
+    description: "YAML parser (for shared/ files)"
+    roles: [all]
+    check_cmd: "python -c \"import yaml\""
+    install:
+      - type: pip
+        package: pyyaml
+
+  impacket:
+    description: "Windows network protocol toolkit (SMB/NTLM/Kerberos)"
+    roles: [pentest, server]
+    check_cmd: "python -c \"import impacket\""
+    install:
+      - type: pip
+        package: impacket
+
+  pwntools:
+    description: "CTF exploitation framework"
+    roles: [pentest, reverse]
+    check_cmd: "python -c \"import pwn\""
+    install:
+      - type: pip
+        package: pwntools
+
+  requests:
+    description: "HTTP library"
+    roles: [all]
+    check_cmd: "python -c \"import requests\""
+    install:
+      - type: pip
+        package: requests
+
+  dissect:
+    description: "Fox-IT disk image parser (E01/VMDK/VHD)"
+    roles: [computer, server]
+    check_cmd: "python -c \"import dissect.target\""
+    install:
+      - type: pip
+        package: dissect.target
+
+# ─────────────────────────────────────────
+# FORENSICS — disk, mobile, browser
+# ─────────────────────────────────────────
+forensics:
+  exiftool:
+    description: "Metadata extraction (images, docs, videos)"
+    roles: [all]
+    check_cmd: "exiftool -ver"
+    install:
+      - type: scoop
+        package: exiftool
+      - type: winget
+        id: OliverBetz.ExifTool
+
+  sqlite3:
+    description: "SQLite database CLI"
+    roles: [all]
+    check_cmd: "sqlite3 --version"
+    install:
+      - type: scoop
+        package: sqlite
+
+  autopsy:
+    description: "Digital forensics GUI platform"
+    roles: [computer]
+    check_cmd: "autopsy64 --version"
+    install:
+      - type: manual
+        url: "https://www.autopsy.com/download/"
+    note: "GUI tool, AI cannot directly operate"
+
+  binwalk:
+    description: "Firmware/file carving & extraction"
+    roles: [stego_crypto, reverse]
+    check_cmd: "binwalk -h"
+    install:
+      - type: pip
+        package: binwalk
+      - type: wsl
+        package: binwalk
+
+  foremost:
+    description: "File carving by headers/footers"
+    roles: [stego_crypto, computer]
+    check_cmd: "foremost -V"
+    install:
+      - type: wsl
+        package: foremost
+      - type: docker
+        image: "remnux/foremost"
+
+  sleuthkit:
+    description: "Filesystem forensics (fls, icat, mmls)"
+    roles: [computer, server]
+    check_cmd: "fls -V"
+    install:
+      - type: scoop
+        package: sleuthkit
+        bucket: extras
+      - type: wsl
+        package: sleuthkit
+
+# ─────────────────────────────────────────
+# NETWORK — packet capture, protocol analysis
+# ─────────────────────────────────────────
+network:
+  tshark:
+    description: "Wireshark CLI (packet analysis)"
+    roles: [network, traffic]
+    check_cmd: "tshark -v"
+    install:
+      - type: scoop
+        package: wireshark
+      - type: winget
+        id: WiresharkFoundation.Wireshark
+    known_paths:
+      - "C:\\Program Files\\Wireshark\\tshark.exe"
+      - "~/scoop/apps/wireshark/current/tshark.exe"
+
+  nmap:
+    description: "Network scanner"
+    roles: [network, pentest]
+    check_cmd: "nmap --version"
+    install:
+      - type: scoop
+        package: nmap
+      - type: winget
+        id: Insecure.Nmap
+
+  tcpdump:
+    description: "Packet capture (Linux)"
+    roles: [network]
+    check_cmd: "tcpdump --version"
+    install:
+      - type: wsl
+        package: tcpdump
+
+# ─────────────────────────────────────────
+# REVERSE ENGINEERING
+# ─────────────────────────────────────────
+reverse:
+  ghidra:
+    description: "NSA reverse engineering suite"
+    roles: [reverse]
+    check_cmd: "ghidraRun -h"
+    install:
+      - type: scoop
+        package: ghidra
+      - type: manual
+        url: "https://ghidra-sre.org/"
+    note: "Requires Java. scoop install java/openjdk first."
+
+  radare2:
+    description: "Reverse engineering framework (CLI)"
+    roles: [reverse]
+    check_cmd: "r2 -v"
+    install:
+      - type: scoop
+        package: radare2
+
+  upx:
+    description: "UPX packer/unpacker"
+    roles: [reverse]
+    check_cmd: "upx --version"
+    install:
+      - type: scoop
+        package: upx
+
+  die:
+    description: "Detect It Easy — file type / packer detection"
+    roles: [reverse]
+    check_cmd: "diec --version"
+    install:
+      - type: scoop
+        package: detect-it-easy
+        bucket: extras
+      - type: manual
+        url: "https://github.com/horsicq/DIE-engine/releases"
+
+# ─────────────────────────────────────────
+# STEGO & CRYPTO
+# ─────────────────────────────────────────
+stego_crypto:
+  steghide:
+    description: "Steganography hide/extract (JPEG/BMP)"
+    roles: [stego_crypto]
+    check_cmd: "steghide --help"
+    install:
+      - type: wsl
+        package: steghide
+      - type: docker
+        image: "remnux/steghide"
+
+  zsteg:
+    description: "PNG/BMP LSB steganography detector"
+    roles: [stego_crypto]
+    check_cmd: "zsteg -h"
+    install:
+      - type: manual
+        url: "gem install zsteg (requires Ruby)"
+
+  hashcat:
+    description: "GPU-accelerated password cracker"
+    roles: [stego_crypto, pentest]
+    check_cmd: "hashcat --version"
+    install:
+      - type: scoop
+        package: hashcat
+
+  john:
+    description: "John the Ripper password cracker"
+    roles: [stego_crypto, pentest]
+    check_cmd: "john --help"
+    install:
+      - type: scoop
+        package: john-the-ripper
+      - type: manual
+        url: "https://www.openwall.com/john/"
+
+# ─────────────────────────────────────────
+# PENTEST — penetration testing toolkit
+# ─────────────────────────────────────────
+pentest:
+  sqlmap:
+    description: "Automatic SQL injection tool"
+    roles: [pentest, web]
+    check_cmd: "python -c \"import sqlmap\""
+    install:
+      - type: pip
+        package: sqlmap
+
+  ffuf:
+    description: "Fast web fuzzer"
+    roles: [pentest, web]
+    check_cmd: "ffuf -V"
+    install:
+      - type: scoop
+        package: ffuf
+
+  gobuster:
+    description: "Directory/DNS brute-force"
+    roles: [pentest, web]
+    check_cmd: "gobuster version"
+    install:
+      - type: scoop
+        package: gobuster
+
+  nikto:
+    description: "Web server scanner"
+    roles: [pentest, web]
+    check_cmd: "nikto -Version"
+    install:
+      - type: wsl
+        package: nikto
+      - type: docker
+        image: "sullo/nikto"
+
+  hydra:
+    description: "Network login brute-force"
+    roles: [pentest]
+    check_cmd: "hydra -h"
+    install:
+      - type: wsl
+        package: hydra
+      - type: docker
+        image: "vanhauser/thc-hydra"
+
+  responder:
+    description: "LLMNR/NBT-NS/MDNS poisoner"
+    roles: [pentest]
+    check_cmd: "responder -h"
+    install:
+      - type: pip
+        package: Responder
+      - type: wsl
+        package: responder
+
+  nuclei:
+    description: "Vulnerability scanner (template-based)"
+    roles: [pentest, web]
+    check_cmd: "nuclei -version"
+    install:
+      - type: scoop
+        package: nuclei
+
+  dirsearch:
+    description: "Web path brute-forcer"
+    roles: [pentest, web]
+    check_cmd: "python -c \"import dirsearch\""
+    install:
+      - type: pip
+        package: dirsearch
+
+  cyberchef:
+    description: "Offline data transformation (encode/decode/crypto)"
+    roles: [all]
+    check_cmd: null
+    install:
+      - type: manual
+        url: "https://github.com/gchq/CyberChef/releases"
+    note: "Browser-based, download CyberChef.zip and open index.html"
+
+# ─────────────────────────────────────────
+# DOCKER IMAGES — for Linux-only toolkits
+# ─────────────────────────────────────────
+docker_images:
+  kali-tools:
+    description: "Kali Linux with full pentest toolkit"
+    image: "kalilinux/kali-rolling"
+    post_install: "apt update && apt install -y kali-tools-top10"
+    note: "Heavy (~3GB). Use for tools unavailable on Windows."
+
+  remnux:
+    description: "REMnux malware analysis distribution"
+    image: "remnux/remnux-distro"
+    note: "Malware analysis, document analysis, network forensics"
+
+  sift:
+    description: "SANS SIFT forensics workstation"
+    image: "teamdfir/sift-cli"
+    note: "Full forensics suite (autopsy, volatility, sleuthkit, etc.)"
