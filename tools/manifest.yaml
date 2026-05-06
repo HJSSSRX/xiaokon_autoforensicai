@@ -340,6 +340,8 @@ stego_crypto:
     roles: [stego_crypto]
     check_cmd: "zsteg -h"
     install:
+      - type: wsl
+        package: "ruby && gem install zsteg --user-install"
       - type: manual
         url: "gem install zsteg (requires Ruby)"
 
@@ -418,10 +420,10 @@ pentest:
     roles: [pentest]
     check_cmd: "responder -h"
     install:
+      - type: wsl
+        package: Responder
       - type: pip
         package: Responder
-      - type: wsl
-        package: responder
 
   nuclei:
     description: "Vulnerability scanner (template-based)"
@@ -443,6 +445,8 @@ pentest:
     description: "Offline data transformation (encode/decode/crypto)"
     roles: [all]
     check_cmd: null
+    known_paths:
+      - "C:\\Users\\44116\\scoop\\apps\\cyberchef\\current\\CyberChef_v10.19.4.html"
     install:
       - type: manual
         url: "https://github.com/gchq/CyberChef/releases"

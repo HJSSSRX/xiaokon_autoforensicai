@@ -74,7 +74,7 @@ def check_tool(tool_def):
             else:
                 exe = check_cmd.split()[0]
                 result = subprocess.run(
-                    ["wsl", "-e", "which", exe],
+                    ["wsl", "--", "bash", "-lc", f"which {exe}"],
                     capture_output=True, timeout=5, text=True
                 )
             if result.returncode == 0:
