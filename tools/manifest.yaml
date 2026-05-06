@@ -184,6 +184,8 @@ forensics:
     description: "Metadata extraction (images, docs, videos)"
     roles: [all]
     check_cmd: "exiftool -ver"
+    known_paths:
+      - "C:\\Users\\44116\\AppData\\Local\\Programs\\ExifTool\\ExifTool.exe"
     install:
       - type: scoop
         package: exiftool
@@ -194,6 +196,8 @@ forensics:
     description: "SQLite database CLI"
     roles: [all]
     check_cmd: "sqlite3 --version"
+    known_paths:
+      - "C:\\Users\\44116\\AppData\\Local\\Android\\Sdk\\platform-tools\\sqlite3.exe"
     install:
       - type: scoop
         package: sqlite
@@ -341,6 +345,8 @@ stego_crypto:
     description: "GPU-accelerated password cracker"
     roles: [stego_crypto, pentest]
     check_cmd: "hashcat --version"
+    known_paths:
+      - "D:\\CTF\\hashcat-7.1.2\\hashcat-7.1.2\\hashcat.exe"
     install:
       - type: scoop
         package: hashcat
