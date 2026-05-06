@@ -1,5 +1,11 @@
 # 会话交接记录
 
+> ⚠️ **2026-05-06 23:00 架构变更通知**
+> 项目已重置到新框架（framework/main + data/main 上游）。**本文件已 legacy**，仅作平航杯训练进度参考。
+> 新架构入口：`prompts/main.md`（"小空自己动" 触发）。新会话先读 `worklog/2026-05-06_03_项目重建+B1B2修复.md`。
+> 旧的 `AGENTS.md` 已删除；`AI_BRAIN/persona.md`、`output_contract.md` 等已不再是入口（保留参考）。
+> 回退路径：`git reset --hard backup-2026-05-06-pre-overwrite`
+
 **会话ID**：session_2026-05-06_C完成待下一
 **最后更新**：2026-05-06 07:20
 **AI版本**：Cascade
