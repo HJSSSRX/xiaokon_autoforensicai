@@ -1,0 +1,43 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "M04"
+  category: "M_phone"
+  short_name: "木马安装来源 URL"
+  difficulty: "medium"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析倩倩的手机检材，木马 app 是怎么被安装的（网址）（格式：http://127.0.0.1:1234/）"
+answer:
+  value: "http://192.168.180.107:6262/"
+  format_note: "Python http.server 风格的目录列表服务"
+walkthrough:
+  identify: |
+    解 com.android.browser.bak 后发现：
+    - 浏览器Download/ 目录含 fix2_sign.apk (3369615 字节，与木马 base.apk md5 完全一致)
+    - 浏览器Download/ 目录含 Puzzle_Game.apk (拼图)
+  extract: |
+    检查 browser2.db 的 history 表，按 visits 倒序：
+    http://192.168.180.107:6262/  访问 4 次（最多）
+    标题：Directory listing for /  ← 经典 Python http.server 标识
+    最早访问：2025-04-10 15:12:15
+  analyze: |
+    起早王在 192.168.180.107（同局域网）开 Python http.server 监听 6262
+    端口，把 fix2_sign.apk 放在那里供倩倩浏览器下载安装。
+  verify: |
+    fix2_sign.apk 的 md5 = 23a1527d704210b07b50161cfe79d2e8
+    与备份内 com.example.reverseshell2 的 base.apk md5 完全相同 ✓
+  command: |
+    # 浏览器历史 SQL
+    sqlite3 -header browser2.db \
+      "SELECT url,title,visits,datetime(date/1000,'unixepoch','+8 hours') \
+       FROM history ORDER BY visits DESC LIMIT 5;"
+    # 验证 hash
+    md5sum '浏览器Download/fix2_sign.apk' \
+           apps/com.example.reverseshell2/a/base.apk
+integrity:
+  source: "browser2.db (com.android.browser/db/)"
+  external_access: false
+  tools: ["sqlite3", "md5sum"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/m_browser_db.sh"

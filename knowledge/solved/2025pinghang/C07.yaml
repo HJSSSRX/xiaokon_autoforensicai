@@ -1,0 +1,40 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C07"
+  category: "C_computer"
+  short_name: "SillyTavern 起早王创建时间"
+  difficulty: "medium"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，SillyTavern 中账户起早王的创建时间是什么时候（格式：2020/1/1 01:01:01）"
+answer:
+  value: "2025/3/10 18:04:56"
+  format_note: "SillyTavern _storage JSON 的 created 字段（毫秒时间戳，UTC+8 本地）"
+walkthrough:
+  identify: |
+    SillyTavern 安装在 C:\Users\起早王\wife\wife\（「老婆」双关路径）
+    用户数据存 data\_storage\<sha256> JSON
+  extract: |
+    cat data/_storage/* | python3 -c 'import json; ...'
+  analyze: |
+    文件 3a5bb37a...9dcc:
+      {"key":"user:default-user",
+       "value":{"handle":"default-user","name":"起早王",
+       "created":1741603496128, ...}}
+    created 是 毫秒时间戳 = 1741603496128 ms
+    → 1741603496.128 秒 = 2025-03-10 10:04:56 UTC
+    → UTC+8: 2025/3/10 18:04:56
+  verify: |
+    其他账户 created 均在 2025-03-10 同一天之后：
+      恋恋 1741604055707 (18:14:15)
+      小朱 1741604071278 (18:14:31)
+      灵姐 1741604089579 (18:14:49)
+    起早王（default-user name=起早王）是最早创建的账户。
+  command: "sudo cat /mnt/win_c/Users/起早王/wife/wife/data/_storage/3a5bb37a*"
+integrity:
+  source: "SillyTavern data/_storage/ JSON"
+  external_access: false
+  tools: ["cat", "python3"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_silly3.sh"

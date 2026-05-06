@@ -1,0 +1,42 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C19"
+  category: "C_computer"
+  short_name: "倩倩币最大供应量"
+  difficulty: "hard"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，起早王购买的倩倩币最大供应量（格式：1）"
+answer:
+  value: "1000000"
+  format_note: "totalSupply() = 0x174876e800 = 100,000,000,000 raw ÷ 10^5 = 1,000,000"
+walkthrough:
+  identify: |
+    MetaMask TokensController 记录 token 元数据但不存 totalSupply。
+    totalSupply() 是链上状态，必须通过 JSON-RPC / Etherscan 查询。
+  extract: |
+    合约地址（本地 MetaMask 已证实）：
+      0x3818ea4d51778f032943ca402535eDD2b3fB518d  @ Sepolia (chainId 0xaa36a7 = 11155111)
+      name: qianqianbi
+      symbol: qianqian
+      decimals: 5
+  analyze: |
+    JSON-RPC 调用（publicnode Sepolia）：
+    curl -X POST https://ethereum-sepolia-rpc.publicnode.com \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","method":"eth_call","params":[{"to":"0x3818ea4d51778f032943ca402535eDD2b3fB518d","data":"0x18160ddd"},"latest"],"id":1}'
+    返回：
+      result = 0x000...0174876e800
+    0x174876e800 = 100,000,000,000
+    decimals = 5
+    → 最大供应量 = 100,000,000,000 / 10^5 = 1,000,000 个倩倩币
+  verify: "decimals() 返回 0x05 确认 5 位小数"
+integrity:
+  source: "MetaMask allTokens state + Sepolia 链上 totalSupply()"
+  external_access: true
+  external_note: "用户授权查询 Sepolia 公开账本（类 WHOIS/DNS 公开服务）"
+  tools: ["grep", "curl", "python3"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_mm_vault.sh"
+    - "cases/2025平航杯/artifacts/c_chain_query2.sh"

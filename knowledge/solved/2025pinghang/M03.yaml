@@ -1,0 +1,32 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "M03"
+  category: "M_phone"
+  short_name: "拼图所示大学"
+  difficulty: "easy"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析手机内 Puzzle_Game 拼图程序，请问最终拼成功的图片是哪所大学（格式：浙江大学）"
+answer:
+  value: "浙江工业大学"
+  format_note: "用户视觉确认（2026-05-04）"
+walkthrough:
+  identify: "Puzzle_Game.apk 内仅有一张可拼的游戏图片 res/drawable-hdpi-v4/pic1.jpg (388x568)"
+  extract: "解 APK 后 cp 到 share/M03_puzzle_pic1.jpg"
+  analyze: |
+    图片内容：宋代古装人物雕像（戴展角幞头/拱手）+ 红枫 + 现代玻璃幕墙教学楼。
+    浙江工业大学屏峰校区校园内有类似的景观（古代先贤雕像 + 秋季红枫 + 现代教学楼）。
+  verify: "用户人工视觉识别确认"
+  command: |
+    # 提取图片
+    cp /tmp/phone/puzzle_apk/res/drawable-hdpi-v4/pic1.jpg \
+       cases/2025平航杯/artifacts/M03_puzzle_pic1.jpg
+integrity:
+  source: "Puzzle_Game.apk → res/drawable-hdpi-v4/pic1.jpg"
+  external_access: false
+  tools: ["unzip", "exiftool"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/M03_puzzle_pic1.jpg"
+notes: |
+  Exam mode 下不调用图像识别 API；用户人工识图确认为浙江工业大学。

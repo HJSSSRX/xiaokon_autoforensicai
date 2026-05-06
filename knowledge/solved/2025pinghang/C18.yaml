@@ -1,0 +1,36 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C18"
+  category: "C_computer"
+  short_name: "虚拟货币钱包地址"
+  difficulty: "medium"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，起早王的虚拟货币钱包是什么（格式：0x11111111）"
+answer:
+  value: "0xd8786a1345cA969C792d9328f8594981066482e9"
+  format_note: "从 BIP39 助记词按 BIP44 默认路径 m/44'/60'/0'/0/0 派生的 Ethereum 地址（EIP-55 checksum 格式）"
+walkthrough:
+  identify: "MetaMask 默认 HD 派生路径 m/44'/60'/0'/0/0，和助记词一一对应"
+  extract: "见 C17"
+  analyze: |
+    from eth_account import Account
+    Account.enable_unaudited_hdwallet_features()
+    acct = Account.from_mnemonic(
+        "flash treat wide divide type plug garlic draft infant broom desert useful"
+    )
+    acct.address  → '0xd8786a1345cA969C792d9328f8594981066482e9'
+    acct.key.hex()→ '31d11dac4c07dea29a7ebfc5af1123af53ff3db8dc2c4eb6d9523a649344922b'
+  verify: |
+    C:\Users\起早王\AppData\Local\Microsoft\Edge\User Data\Default\Extensions\ejbalbakoplchlghecdalmeeeajnimhm\
+    是 MetaMask Edge 扩展（ID ejbalbak...）；IndexedDB 内应有对应加密 vault。
+  command: "python3 cases/2025平航杯/artifacts/c_wallet.py"
+integrity:
+  source: "C17 助记词 + eth_account 本地派生"
+  external_access: false
+  tools: ["python3", "eth_account"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_wallet.py"
+notes: |
+  MetaMask vault 本身也可用密码破解，但既然已有助记词，直接派生更快且不依赖密码。

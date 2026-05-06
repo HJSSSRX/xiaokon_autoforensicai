@@ -1,0 +1,32 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "M11"
+  category: "M_phone"
+  short_name: "持久化 API"
+  difficulty: "medium"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析倩倩的手机检材，木马 APK 通过调用什么 api 实现自身持久化（格式：JobStore）"
+answer:
+  value: "JobScheduler"
+walkthrough:
+  identify: "AndroidManifest.xml 内查找 service / receiver / job 服务声明"
+  extract: |
+    aapt dump xmltree base.apk AndroidManifest.xml 显示：
+    - permission: BIND_JOB_SERVICE
+    - service android:name="...JobService" android:permission="android.permission.BIND_JOB_SERVICE"
+  analyze: |
+    Android JobScheduler API（android.app.job.JobScheduler）允许应用注册周期任务，
+    系统在重启/省电模式下也会按约束唤起，是 Android 5.0+ 推荐的持久化方式。
+    BIND_JOB_SERVICE 权限是 JobScheduler 框架的标志特征。
+  verify: |
+    aapt dump xmltree fix2_sign.apk AndroidManifest.xml | \
+      grep -iE "JobService|JobScheduler|BIND_JOB"
+  command: |
+    aapt dump xmltree base.apk AndroidManifest.xml | grep -iE "Job|persistent"
+integrity:
+  source: "fix2_sign.apk AndroidManifest.xml"
+  external_access: false
+  tools: ["aapt"]
+  artifacts: []

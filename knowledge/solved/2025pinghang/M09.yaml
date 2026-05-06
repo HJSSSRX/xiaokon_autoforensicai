@@ -1,0 +1,35 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "M09"
+  category: "M_phone"
+  short_name: "木马偷拍照片数"
+  difficulty: "hard"
+  status: "unsolved"
+  confidence: "low"
+question:
+  raw: "该木马 app 控制手机摄像头拍了几张照片（格式：1）"
+answer:
+  value: "未解（手机端备份内无 reverseshell2 运行时数据）"
+walkthrough:
+  identify: |
+    木马备份目录 apps/com.example.reverseshell2/ 仅含：
+    - a/base.apk
+    - r/.cache/{classes.dex,classes.jar,classes.dve}（皆加密）
+    - _manifest
+    没有 sp/、f/、db/ 目录，意味着木马**从未实际启动或被清理**。
+  extract: "拍摄记录通常上传到 C2 服务器（起早王服务器/电脑），手机本地不留存"
+  analyze: |
+    答案需从服务器检材 (export-disk0-000002.vmdk) 或起早王电脑 (window.e01)
+    中查找 reverseshell2 上传的图片文件计数。
+  verify: "跨板块依赖：S 服务器或 C 计算机板块"
+unresolved_reason: |
+  手机端备份内 reverseshell2 应用无运行时数据；偷拍照片的接收端
+  在起早王服务器/电脑上。需要 S 或 C 板块解开后回填。
+integrity:
+  source: "com.example.reverseshell2 backup"
+  external_access: false
+  tools: ["tar", "find"]
+  artifacts: []
+cross_reference:
+  - "S 板块 (服务器接收的照片)"
+  - "C 板块 (起早王电脑保存的照片)"

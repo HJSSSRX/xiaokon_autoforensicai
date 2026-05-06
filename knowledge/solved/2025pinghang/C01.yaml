@@ -1,0 +1,31 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C01"
+  category: "C_computer"
+  short_name: "USB 序列号"
+  difficulty: "easy"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，起早王的计算机插入过 usb 序列号是什么（格式：1）"
+answer:
+  value: "20211113005552F"
+  format_note: "USBSTOR 实例名最后 '&0' 前的序列号段"
+walkthrough:
+  identify: "SYSTEM hive ControlSet001\\Enum\\USBSTOR 含所有接入过的 USB 存储设备"
+  extract: |
+    python3 with Registry.Registry('SYSTEM')
+    usbstor = r.open(r'{cs}\Enum\USBSTOR')
+    for dev.subkeys(): for inst.subkeys(): print(inst.name())
+  analyze: |
+    唯一设备: Disk&Ven_TOSHIBA&Prod_EXTERNAL_USB&Rev_0
+    实例 name: '20211113005552F&0' → 序列号 = 20211113005552F
+    FriendlyName: 'TOSHIBA EXTERNAL_USB USB Device'
+  verify: "ControlSet001 即 Current（由 Select/Current=1 确定）"
+  command: "python3 cases/2025平航杯/artifacts/c_reg_basics.py"
+integrity:
+  source: "C:\\Windows\\System32\\config\\SYSTEM"
+  external_access: false
+  tools: ["python-registry", "qemu-nbd", "ewfmount"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_reg_basics.py"

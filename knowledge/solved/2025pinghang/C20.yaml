@@ -1,0 +1,47 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C20"
+  category: "C_computer"
+  short_name: "购买倩倩币数量"
+  difficulty: "hard"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，起早王购买了多少的倩倩币（格式：1.111）"
+answer:
+  value: "521"
+  format_note: "tokenBalances 原始值 0x31afba0 ÷ 10^decimals(5) = 521.0"
+walkthrough:
+  identify: |
+    MetaMask Local Extension Settings leveldb 的 state 含
+    TokenBalancesController.tokenBalances[钱包][chainId][合约] = 余额（wei, hex）
+  extract: |
+    grep -oaE '"tokenBalances".{0,500}' mm.ldb
+    命中：
+      "tokenBalances":{
+        "0xd8786a1345ca969c792d9328f8594981066482e9": {  ← 起早王钱包
+          "0xaa36a7": {                                  ← Sepolia
+            "0x3818ea4d51778f032943ca402535eDD2b3fB518d":  ← 倩倩币合约
+              "0x31afba0"                                ← 余额（wei）
+          }
+        }
+      }
+  analyze: |
+    0x31afba0 = 52,100,000（raw units）
+    decimals = 5
+    人类可读余额 = 52,100,000 / 10^5 = 521.0 倩倩币
+  verify: |
+    transactions=[] 表示起早王没发过 outgoing tx，
+    所以当前余额 = 他获得（"购买"）的总量。
+  command: |
+    python3 -c 'b=0x31afba0; d=5; print(f"{b/10**d}")'
+integrity:
+  source: "MetaMask Local Extension Settings ldb"
+  external_access: false
+  tools: ["grep", "python3"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_mm_vault.sh"
+    - "cases/2025平航杯/artifacts/c_mm_deep.sh"
+notes: |
+  格式"1.111"暗示应该带小数点。521.0 写作 "521.000" 或 "521"。
+  实际值 521.000 个倩倩币。

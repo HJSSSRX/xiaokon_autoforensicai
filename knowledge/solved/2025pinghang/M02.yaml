@@ -1,0 +1,47 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "M02"
+  category: "M_phone"
+  short_name: "Puzzle_Game Flag1"
+  difficulty: "medium"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析倩倩的手机检材，手机内 Puzzle_Game 拼图程序拼图 APK 中的 Flag1 是什么（格式：xxxxxxxxx）"
+answer:
+  value: "Key_1n_the_P1c"
+  format_note: "AES-128-ECB 解密 hex cipher 后去 PKCS#7 padding 得到的明文"
+walkthrough:
+  identify: "Puzzle_Game.apk 位于 com.android.browser 浏览器下载目录"
+  extract: |
+    jadx 反编译 com.example.puzzlegame.util.AESUtil。
+    密钥 = MAGIC_NUMBERS XOR 0x06 = "weZl_d0wn_sbwyz_"
+    密文：CIPHER_PART1..4 拼接的字符串首字符 'P' 不是 hex，
+    触发 hexStringToByteArray catch 分支返回固定字节：
+    50 cc 04 31 35 06 80 c3 0a 5e c5 19 52 73 6d 0c (16 字节)
+  analyze: |
+    标准 AES-128-ECB 解密：
+    AES_decrypt(cipher=50cc...0c, key=weZl_d0wn_sbwyz_)
+    = b'Key_1n_the_P1c\x02\x02' → PKCS#7 unpad → 'Key_1n_the_P1c'
+  verify: |
+    PuzzleMain.showFlagDialog() 拼图完成后调用 AESUtil.decryptFlag()
+    并显示在 "您获得的Flag是：" 对话框中
+  command: |
+    # 反编译
+    /opt/jadx/bin/jadx -d /tmp/phone/puzzle Puzzle_Game.apk
+    # 解密
+    python3 -c "from Crypto.Cipher import AES; \
+      m=bytes([113,99,92,106,89,98,54,113,104,89,117,100,113,127,124,89]); \
+      k=bytes(b^6 for b in m); \
+      c=bytes([0x50,0xCC,0x04,0x31,0x35,0x06,0x80,0xC3,0x0A,0x5E,0xC5,0x19,0x52,0x73,0x6D,0x0C]); \
+      p=AES.new(k,AES.MODE_ECB).decrypt(c); print(p[:-p[-1]].decode())"
+integrity:
+  source: "Puzzle_Game.apk (浏览器Download/)"
+  external_access: false
+  tools: ["jadx 1.5.0", "python3 + pycryptodome"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/m_aes_solve.py"
+notes: |
+  Decryptor.java (flag{th1s_1s_T4k3_k3y!!TAke_initial_vec}) 和
+  reDecryptor.java (含 random) 都是诱饵，类内常量 FAKE_KEY/FAKE_CIPHER 自证。
+  真正的 flag 即 AESUtil 主路径解密结果。

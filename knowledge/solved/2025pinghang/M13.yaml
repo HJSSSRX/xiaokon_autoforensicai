@@ -1,0 +1,32 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "M13"
+  category: "M_phone"
+  short_name: "手机 IMEI"
+  difficulty: "easy"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "此手机检材的 IMEI 号是多少（格式：1234567890）"
+answer:
+  value: "865372026366143"
+  format_note: "15 位数字，已通过 Luhn 校验"
+walkthrough:
+  identify: |
+    在 com.android.email 备份的 sp/mistat.xml （小米统计 SDK 上报数据）中
+    找到 imei 字段：
+      imei">865372026366143
+  extract: "MIUI 系统应用通过 mistat 上报包含 IMEI 的设备指纹"
+  analyze: |
+    Luhn 校验（IMEI 标准）：
+      8+3+5+6+7+4+0+4+6+6+6+3+1+8+3 = 70, 70 mod 10 = 0 ✓
+  verify: "其他 mi 应用 (camera/securitycenter) 的 mistat.xml 应有相同值"
+  command: |
+    grep -aoE 'imei[^0-9]+[0-9]{15}' \
+      /tmp/phone/all_bak/*/apps/*/sp/mistat.xml
+integrity:
+  source: "com.android.email backup → sp/mistat.xml"
+  external_access: false
+  tools: ["grep"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/m_imei2.sh"

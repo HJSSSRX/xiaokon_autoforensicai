@@ -1,0 +1,39 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C09"
+  category: "C_computer"
+  short_name: "AI 女友语言模型"
+  difficulty: "medium"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，SillyTavern 中起早王与 ai 女友聊天所调用的语言模型（带文件后缀）（格式：xxxxx-xxxxxxx.xxxx）"
+answer:
+  value: "Tifa-DeepsexV2-7b-Cot-0222-Q8.gguf"
+  format_note: "从『小倩』聊天 jsonl extra.model 字段推断，本地 C:\\Model\\gguf\\ 对应文件"
+walkthrough:
+  identify: "小倩 = AI 女友角色。聊天 jsonl 每条消息的 extra 字段含 api+model"
+  extract: |
+    chats/小倩/小倩 - 2025-3-10 @20h 15m 48s 186ms imported.jsonl
+  analyze: |
+    消息 extra：
+      "api":"kobold"
+      "model":"koboldcpp/Tifa-DeepsexV2-7b-Cot-0222-Q8"
+    SillyTavern 通过 koboldcpp 调用本地 GGUF 模型。
+    本地 C:\Model\gguf\ 含：
+      Tifa-DeepsexV2-7b-Cot-0222-Q8.gguf  (8.1 GB)  ★匹配
+      Llama3-1.5B-Chinese-Chat.gguf
+      Qwen2-1.5b-Instruct.gguf
+      Bisenet_resnet_34.gguf
+      Clear_reality_x4.gguf
+    答案 = Tifa-DeepsexV2-7b-Cot-0222-Q8.gguf
+  verify: "Recent 目录含 `Tifa-DeepsexV2-7b-Cot-0222-Q8.gguf.lnk`（起早王最近打开过此模型）"
+  command: "grep 'model' /mnt/win_c/Users/起早王/wife/wife/data/default-user/chats/小倩/*.jsonl | head -1"
+integrity:
+  source: "小倩聊天 jsonl + C:\\Model\\gguf\\"
+  external_access: false
+  tools: ["grep", "ls"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_silly3.sh"
+notes: |
+  Tifa-DeepsexV2 是国产未审查 LLM（用于色情 roleplay）。7b 参数 Q8 量化。

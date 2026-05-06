@@ -1,0 +1,50 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C21"
+  category: "C_computer"
+  short_name: "倩倩币交易时间"
+  difficulty: "hard"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，起早王交易倩倩币时间（utc）（格式：2020/1/1 01:01:01）"
+answer:
+  value: "2025/3/24 02:08:36"
+  format_note: "Sepolia block 7968921 timestamp 0x67e0bea4 = 1742786724 秒 UTC"
+walkthrough:
+  identify: |
+    MetaMask TransactionController.transactions = [] 空
+    （可能起早王未 import 历史交易，或本地清空）
+    但链上 Transfer 事件持久记录在 Sepolia 区块链。
+  extract: |
+    Sepolia eth_getLogs 扫 block 7950000-7999999（按时间粗估）：
+    topic0 = Transfer 签名
+    topic2 = 起早王钱包（to 参数）
+    命中单一事件：
+      blockNumber: 0x799499 = 7,968,921
+      blockTimestamp: 0x67e0bea4 = 1742786724
+      from: 0x341a00b352aad430ab38151447a20e54eda0e5e0
+      to:   0xd8786a1345ca969c792d9328f8594981066482e9 (起早王)
+      value (data): 0x31afba0 = 52,100,000 = 521 倩倩币
+      txHash: 0x7fea01ac15cba2f164fd8b2c81aca6acb370de5037278e978b5a27320f1a0640
+  analyze: |
+    1742786724 秒 → UTC 2025-03-24 02:08:36
+    本地 UTC+8 = 2025-03-24 10:08:36
+    题目显式 UTC → 2025/3/24 02:08:36
+    时间线闭环：
+    - 03-19 19:44  起早王领 Sepolia 水龙头
+    - 03-24 02:08  倩倩（from 0x341a..e5e0）Transfer 521 币给起早王 ← 交易
+    - 03-24 08:06  MetaMask fetch block
+    - 03-24 14:35  起早王打开 Etherscan 查自己地址
+  verify: "python datetime.fromtimestamp(0x67e0bea4, UTC) = 2025-03-24 02:08:36"
+integrity:
+  source: "Edge History 时间窗 + Sepolia eth_getLogs"
+  external_access: true
+  external_note: "用户授权查询 Sepolia 公开账本"
+  tools: ["sqlite3", "curl", "python3"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_hist_full.sh"
+    - "cases/2025平航杯/artifacts/c_chain_logs.sh"
+notes: |
+  合约上唯一一笔 Transfer 事件（to 起早王）=521 币，与本地 tokenBalance 完美对齐。
+  from 地址 0x341a00b352aad430ab38151447a20e54eda0e5e0 推测为小倩钱包。

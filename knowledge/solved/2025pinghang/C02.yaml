@@ -1,0 +1,36 @@
+meta:
+  competition: "2025pinghang"
+  question_id: "C02"
+  category: "C_computer"
+  short_name: "便签待干条数"
+  difficulty: "easy"
+  status: "solved"
+  confidence: "high"
+question:
+  raw: "分析起早王的计算机检材，起早王的便签里有几条待干（格式：1）"
+answer:
+  value: "5"
+  format_note: "Sticky Notes plum.sqlite Note 表只有 1 条，但单条内容包含 5 条编号待干"
+walkthrough:
+  identify: "Microsoft Sticky Notes 数据库 plum.sqlite"
+  extract: |
+    C:\Users\起早王\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\
+      plum.sqlite / plum.sqlite-wal / plum.sqlite-shm
+    sqlite3 plum.sqlite "SELECT Text FROM Note"
+  analyze: |
+    单条 Note：
+      今天待干：
+      1. 写日记
+      2. 把公司的内网再检查一遍
+      3. 清理电脑数据
+      4. 和小倩聊天
+      5. 给李姐带杯奶茶
+    → 5 条
+  verify: "Note 表 count=1，Text 字段 1..5 明确编号"
+  command: "sqlite3 plum.sqlite 'SELECT Text FROM Note;'"
+integrity:
+  source: "plum.sqlite (需一起 cp sqlite + -wal + -shm)"
+  external_access: false
+  tools: ["sqlite3"]
+  artifacts:
+    - "cases/2025平航杯/artifacts/c_sticky.sh"
