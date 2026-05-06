@@ -131,6 +131,9 @@ forhacker/
 
 ForHacker 的知识库是纯 Markdown 文件，每个文件有 YAML frontmatter 标签，支持多维度搜索。
 
+> **📦 知识库可独立使用**：不需要本框架，直接 `git clone https://github.com/HJSSSRX/autoforensicai_data.git` 即可搜索和使用所有题解。
+> 详见 [autoforensicai_data](https://github.com/HJSSSRX/autoforensicai_data)
+
 ### 解题方案格式 (`knowledge/solved/*.md`)
 
 ```markdown

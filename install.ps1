@@ -264,6 +264,28 @@ if (-not (Test-CommandExists "python")) {
     exit 1
 }
 
+# Step 0: Ensure knowledge base
+$kbDir = Join-Path $ScriptRoot "knowledge"
+$kbRepo = "https://github.com/HJSSSRX/autoforensicai_data.git"
+if (-not (Test-Path (Join-Path $kbDir "solved"))) {
+    Write-Section "KNOWLEDGE BASE"
+    Write-Info "Downloading knowledge base from $kbRepo ..."
+    $tmpDir = Join-Path $env:TEMP "autoforensicai_data_clone"
+    if (Test-Path $tmpDir) { Remove-Item $tmpDir -Recurse -Force }
+    git clone --depth 1 $kbRepo $tmpDir 2>$null
+    if (Test-Path (Join-Path $tmpDir "knowledge")) {
+        Copy-Item -Recurse -Force (Join-Path $tmpDir "knowledge\*") $kbDir
+        Remove-Item $tmpDir -Recurse -Force
+        $count = (Get-ChildItem $kbDir -Recurse -Filter "*.md").Count
+        Write-Ok "Knowledge base installed ($count files)"
+    } else {
+        Write-Fail "Failed to download knowledge base"
+    }
+} else {
+    $count = (Get-ChildItem $kbDir -Recurse -Filter "*.md").Count
+    Write-Ok "Knowledge base present ($count files)"
+}
+
 $manifest = Parse-Manifest
 if (-not $manifest) { exit 1 }
 
