@@ -244,6 +244,26 @@ forensics:
       - type: wsl
         package: sleuthkit
 
+  chainsaw:
+    description: "Rapid Windows event log threat hunting (EVTX)"
+    roles: [computer]
+    check_cmd: "chainsaw --version"
+    known_paths:
+      - "F:\\cloud\\Tool\\chainsaw\\chainsaw\\chainsaw.exe"
+    install:
+      - type: manual
+        url: "https://github.com/WithSecureLabs/chainsaw/releases"
+
+  hayabusa:
+    description: "Sigma-based EVTX threat hunting / timeline generator"
+    roles: [computer]
+    check_cmd: "hayabusa-3.9.0-win-x64 help"
+    known_paths:
+      - "F:\\cloud\\Tool\\hayabusa\\hayabusa-3.9.0-win-x64.exe"
+    install:
+      - type: manual
+        url: "https://github.com/Yamato-Security/hayabusa/releases"
+
 # ─────────────────────────────────────────
 # NETWORK — packet capture, protocol analysis
 # ─────────────────────────────────────────
