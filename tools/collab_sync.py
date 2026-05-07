@@ -155,7 +155,7 @@ def git_run(case_dir, *git_args):
     result = subprocess.run(
         ["git"] + list(git_args),
         cwd=case_dir,
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     if result.returncode != 0 and result.stderr:
         print(f"[git] {result.stderr.strip()}")

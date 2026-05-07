@@ -1,0 +1,574 @@
+#!/usr/bin/env python3
+"""
+collab_hub.py - Lightweight HTTP Hub for multi-machine AI agent collaboration.
+
+Architecture:
+  Main host runs Hub. Remote IDE Agents (Windsurf/Cursor/Claude) interact via curl.
+  Stateless server; all state persists in <case_dir>/shared/*.yaml.
+
+API:
+  GET  /ping
+  GET  /findings              (?from=role)
+  GET  /findings/{id}
+  POST /findings              {from, type, summary, detail, related_to}
+  GET  /progress
+  POST /progress/{role}       {status, current_task, completed, pending, blocker}
+  GET  /answers               (or /answers/{category})
+  POST /answers               {category, qid, question, answer, confidence, source_role, evidence}
+  GET  /questions             (?to=role)
+  POST /questions             {from, to, question}
+  POST /questions/{id}/reply  {answer}
+  GET  /session               -> {session_log, blockers, strategy}
+  POST /session/log           {decision, reason, related_findings}
+  POST /session/blocker       {from, blocker, needs, routed_to}
+  POST /session/strategy      {current_phase, priorities, deferred, notes}
+  GET  /files/{name}          (whitelisted: role_prompt_*.md, shared/*.yaml)
+
+Usage:
+  python collab_hub.py serve <case_dir> [--port 8765] [--bind 0.0.0.0]
+
+Client examples (curl):
+  curl http://192.168.1.10:8765/ping
+  curl -X POST http://192.168.1.10:8765/findings \
+       -H "Content-Type: application/json" \
+       -d '{"from":"computer_analyst","summary":"OS=Win10","detail":"reg key X"}'
+"""
+import argparse
+import datetime
+import http.server
+import json
+import re
+import socket
+import sys
+import threading
+from pathlib import Path
+from urllib.parse import parse_qs
+
+try:
+    import yaml
+except ImportError:
+    import subprocess
+    subprocess.run([sys.executable, "-m", "pip", "install", "pyyaml", "-q"], check=False)
+    import yaml
+
+
+# ─── Constants ───
+
+ROLE_PREFIX = {
+    "computer_analyst": "C",
+    "mobile_analyst": "M",
+    "server_analyst": "S",
+    "binary_analyst": "B",
+    "main_designer": "D",
+}
+
+# Whitelist for /files/ to prevent path traversal
+# Allows: role_prompt_*.md, shared/*.yaml, and any TOP-LEVEL ALL-CAPS .md docs
+# (deployment guides, handoff notes, etc.) but NOT arbitrary user files.
+FILE_WHITELIST = re.compile(
+    r"^(role_prompt_\w+\.md|shared/[\w_-]+\.yaml|[A-Z][A-Z0-9_]+\.md|README\.md|import_[\w_]+\.py)$"
+)
+
+_lock = threading.Lock()
+_hub_started_at = now_str() if False else None  # placeholder, set in cmd_serve
+
+
+# ─── State helpers ───
+
+def now_str():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def shared_path(case_dir, name):
+    return Path(case_dir) / "shared" / name
+
+
+def load_yaml(path, default=None):
+    if not path.exists():
+        return default if default is not None else []
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    if data is None:
+        return default if default is not None else []
+    return data
+
+
+def save_yaml(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
+def _next_seq_id(items, prefix, key="id"):
+    pat = re.compile(rf"^{prefix}(\d+)$")
+    nums = []
+    for it in items:
+        if isinstance(it, dict):
+            m = pat.match(str(it.get(key, "")))
+            if m:
+                nums.append(int(m.group(1)))
+    return f"{prefix}{max(nums, default=0) + 1:03d}"
+
+
+def next_finding_id(findings, role):
+    p = ROLE_PREFIX.get(role, "X")
+    return _next_seq_id(findings, f"F-{p}")
+
+
+def next_question_id(questions):
+    return _next_seq_id(questions, "Q")
+
+
+def next_blocker_id(blockers):
+    return _next_seq_id(blockers, "B")
+
+
+# ─── HTTP Handler ───
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    case_dir = None
+
+    def log_message(self, fmt, *args):
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        sys.stderr.write(f"[{ts}] {self.address_string()} {fmt % args}\n")
+
+    def _send(self, status, body=None, content_type="application/json; charset=utf-8"):
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        if body is not None:
+            if isinstance(body, (dict, list)):
+                payload = json.dumps(body, ensure_ascii=False, indent=2).encode("utf-8")
+            elif isinstance(body, bytes):
+                payload = body
+            else:
+                payload = str(body).encode("utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        else:
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+    def _err(self, status, msg):
+        self._send(status, {"error": msg, "code": status})
+
+    def _read_json(self):
+        length = int(self.headers.get("Content-Length", 0))
+        if length == 0:
+            return {}
+        try:
+            raw = self.rfile.read(length).decode("utf-8")
+            return json.loads(raw)
+        except Exception as e:
+            return None
+
+    def _split_path(self):
+        if "?" in self.path:
+            path, qs = self.path.split("?", 1)
+            query = {k: v[0] for k, v in parse_qs(qs).items()}
+        else:
+            path, query = self.path, {}
+        path = path.rstrip("/") or "/"
+        return path, query
+
+    def do_OPTIONS(self):
+        self._send(204)
+
+    def do_GET(self):
+        path, query = self._split_path()
+
+        # Health
+        if path == "/ping":
+            return self._send(200, {
+                "status": "ok",
+                "version": "v3.1",
+                "time": now_str(),
+                "started_at": _hub_started_at,
+            })
+
+        # Dashboard (live web UI) - no-cache headers to defeat browser caching
+        if path in ("/", "/dashboard"):
+            dash_path = Path(__file__).resolve().parent / "dashboard.html"
+            if dash_path.exists():
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                payload = dash_path.read_bytes()
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+                return
+            return self._err(404, "dashboard.html not found in tools/")
+
+        # Findings
+        if path == "/findings":
+            findings = load_yaml(shared_path(self.case_dir, "findings.yaml"), [])
+            if "from" in query:
+                findings = [f for f in findings if isinstance(f, dict) and f.get("from") == query["from"]]
+            return self._send(200, findings)
+
+        m = re.match(r"^/findings/(F-[A-Z]\d+)$", path)
+        if m:
+            findings = load_yaml(shared_path(self.case_dir, "findings.yaml"), [])
+            for f in findings:
+                if isinstance(f, dict) and f.get("id") == m.group(1):
+                    return self._send(200, f)
+            return self._err(404, f"Finding {m.group(1)} not found")
+
+        # Progress
+        if path == "/progress":
+            return self._send(200, load_yaml(shared_path(self.case_dir, "progress.yaml"), {}))
+
+        # Answers
+        if path == "/answers":
+            return self._send(200, load_yaml(shared_path(self.case_dir, "answers.yaml"), {}))
+
+        m = re.match(r"^/answers/(\w+)$", path)
+        if m:
+            answers = load_yaml(shared_path(self.case_dir, "answers.yaml"), {})
+            return self._send(200, answers.get(m.group(1), []) if isinstance(answers, dict) else [])
+
+        # Questions
+        if path == "/questions":
+            questions = load_yaml(shared_path(self.case_dir, "questions.yaml"), [])
+            if "to" in query:
+                questions = [q for q in questions if isinstance(q, dict) and q.get("to") == query["to"]]
+            if "from" in query:
+                questions = [q for q in questions if isinstance(q, dict) and q.get("from") == query["from"]]
+            return self._send(200, questions)
+
+        # Session (recovery snapshot)
+        if path == "/session":
+            return self._send(200, {
+                "session_log": load_yaml(shared_path(self.case_dir, "session_log.yaml"), []),
+                "blockers": load_yaml(shared_path(self.case_dir, "blockers.yaml"), []),
+                "strategy": load_yaml(shared_path(self.case_dir, "strategy.yaml"), {}),
+            })
+
+        # Files (whitelisted)
+        m = re.match(r"^/files/(.+)$", path)
+        if m:
+            fname = m.group(1)
+            if not FILE_WHITELIST.match(fname):
+                return self._err(403, f"File '{fname}' not in whitelist")
+            fpath = Path(self.case_dir) / fname
+            if not fpath.exists():
+                return self._err(404, f"File '{fname}' not found")
+            return self._send(200, fpath.read_bytes(), content_type="text/plain; charset=utf-8")
+
+        return self._err(404, f"No route for GET {path}")
+
+    def do_POST(self):
+        path, _ = self._split_path()
+        body = self._read_json()
+        if body is None:
+            return self._err(400, "Invalid JSON body")
+
+        with _lock:
+            return self._dispatch_post(path, body)
+
+    def _dispatch_post(self, path, body):
+        # POST /findings
+        if path == "/findings":
+            role = body.get("from", "").strip()
+            if not role:
+                return self._err(400, "Missing 'from' field")
+            fpath = shared_path(self.case_dir, "findings.yaml")
+            findings = load_yaml(fpath, [])
+            entry = {
+                "id": next_finding_id(findings, role),
+                "time": now_str(),
+                "from": role,
+                "type": body.get("type", "evidence"),
+                "summary": body.get("summary", ""),
+                "detail": body.get("detail", ""),
+                "related_to": body.get("related_to", []),
+            }
+            findings.append(entry)
+            save_yaml(fpath, findings)
+            return self._send(201, entry)
+
+        # POST /progress/{role}
+        m = re.match(r"^/progress/(\w+)$", path)
+        if m:
+            role = m.group(1)
+            fpath = shared_path(self.case_dir, "progress.yaml")
+            progress = load_yaml(fpath, {})
+            if not isinstance(progress, dict):
+                progress = {}
+            progress[role] = {
+                "status": body.get("status", "idle"),
+                "current_task": body.get("current_task", ""),
+                "completed": body.get("completed", []),
+                "pending": body.get("pending", []),
+                "blocker": body.get("blocker", ""),
+                "updated": now_str(),
+            }
+            save_yaml(fpath, progress)
+            return self._send(200, progress[role])
+
+        # POST /answers
+        # Extended schema (v3.1): adds analysis / evidence_path / verification_status
+        # Backward-compat: any field omitted falls back to "" or [] / "unverified"
+        if path == "/answers":
+            category = body.get("category", "").strip()
+            if not category:
+                return self._err(400, "Missing 'category' field")
+            fpath = shared_path(self.case_dir, "answers.yaml")
+            answers = load_yaml(fpath, {})
+            if not isinstance(answers, dict):
+                answers = {}
+            answers.setdefault(category, [])
+
+            # Preserve existing verification fields when re-POSTing same qid
+            qid = body.get("qid", "")
+            existing = None
+            for a in answers[category]:
+                if isinstance(a, dict) and a.get("qid") == qid and qid:
+                    existing = a
+                    break
+
+            # Normalize evidence_path: accept str or list
+            ev_path = body.get("evidence_path", [])
+            if isinstance(ev_path, str):
+                ev_path = [ev_path] if ev_path else []
+            elif not isinstance(ev_path, list):
+                ev_path = []
+
+            entry = {
+                "qid": qid,
+                "question": body.get("question", "") or (existing.get("question", "") if existing else ""),
+                "answer": body.get("answer", ""),
+                "confidence": body.get("confidence", "medium"),
+                "source_role": body.get("source_role", ""),
+                "evidence": body.get("evidence", ""),                  # finding ID
+                "analysis": body.get("analysis", "") or (existing.get("analysis", "") if existing else ""),
+                "evidence_path": ev_path or (existing.get("evidence_path", []) if existing else []),
+                "verification_status": body.get("verification_status",
+                    existing.get("verification_status", "unverified") if existing else "unverified"),
+                "verified_by": existing.get("verified_by", "") if existing else "",
+                "verified_at": existing.get("verified_at", "") if existing else "",
+                "verify_note": existing.get("verify_note", "") if existing else "",
+                "updated": now_str(),
+            }
+            updated = False
+            for i, a in enumerate(answers[category]):
+                if isinstance(a, dict) and a.get("qid") == entry["qid"] and entry["qid"]:
+                    answers[category][i] = entry
+                    updated = True
+                    break
+            if not updated:
+                answers[category].append(entry)
+            save_yaml(fpath, answers)
+            return self._send(200 if updated else 201, entry)
+
+        # POST /answers/{category}/{qid}/verify - flip verification status
+        # body: {verification_status, verified_by, verify_note}
+        m = re.match(r"^/answers/(\w+)/(\w+)/verify$", path)
+        if m:
+            category, qid = m.group(1), m.group(2)
+            fpath = shared_path(self.case_dir, "answers.yaml")
+            answers = load_yaml(fpath, {})
+            if not isinstance(answers, dict) or category not in answers:
+                return self._err(404, f"Category '{category}' not found")
+            target = None
+            for a in answers[category]:
+                if isinstance(a, dict) and a.get("qid") == qid:
+                    target = a
+                    break
+            if not target:
+                return self._err(404, f"Answer {category}/{qid} not found")
+            new_status = body.get("verification_status", "verified").strip()
+            valid = ("unverified", "verified", "disputed", "failed")
+            if new_status not in valid:
+                return self._err(400, f"verification_status must be one of {valid}")
+            target["verification_status"] = new_status
+            target["verified_by"] = body.get("verified_by", "main_designer")
+            target["verified_at"] = now_str()
+            target["verify_note"] = body.get("verify_note", "")
+            target["updated"] = now_str()
+            save_yaml(fpath, answers)
+            return self._send(200, target)
+
+        # POST /questions
+        if path == "/questions":
+            fpath = shared_path(self.case_dir, "questions.yaml")
+            questions = load_yaml(fpath, [])
+            entry = {
+                "id": next_question_id(questions),
+                "time": now_str(),
+                "from": body.get("from", ""),
+                "to": body.get("to", ""),
+                "question": body.get("question", ""),
+                "answer": "",
+                "answered_at": "",
+            }
+            questions.append(entry)
+            save_yaml(fpath, questions)
+            return self._send(201, entry)
+
+        # POST /questions/{id}/reply
+        m = re.match(r"^/questions/(Q\d+)/reply$", path)
+        if m:
+            qid = m.group(1)
+            fpath = shared_path(self.case_dir, "questions.yaml")
+            questions = load_yaml(fpath, [])
+            for q in questions:
+                if isinstance(q, dict) and q.get("id") == qid:
+                    q["answer"] = body.get("answer", "")
+                    q["answered_at"] = now_str()
+                    save_yaml(fpath, questions)
+                    return self._send(200, q)
+            return self._err(404, f"Question {qid} not found")
+
+        # POST /session/log
+        if path == "/session/log":
+            fpath = shared_path(self.case_dir, "session_log.yaml")
+            log = load_yaml(fpath, [])
+            entry = {
+                "time": now_str(),
+                "decision": body.get("decision", ""),
+                "reason": body.get("reason", ""),
+                "related_findings": body.get("related_findings", []),
+            }
+            log.append(entry)
+            save_yaml(fpath, log)
+            return self._send(201, entry)
+
+        # POST /session/blocker
+        if path == "/session/blocker":
+            fpath = shared_path(self.case_dir, "blockers.yaml")
+            blockers = load_yaml(fpath, [])
+            entry = {
+                "id": next_blocker_id(blockers),
+                "time": now_str(),
+                "from": body.get("from", ""),
+                "blocker": body.get("blocker", ""),
+                "needs": body.get("needs", ""),
+                "status": body.get("status", "open"),
+                "routed_to": body.get("routed_to", ""),
+            }
+            blockers.append(entry)
+            save_yaml(fpath, blockers)
+            return self._send(201, entry)
+
+        # POST /session/strategy (replace)
+        if path == "/session/strategy":
+            fpath = shared_path(self.case_dir, "strategy.yaml")
+            strategy = dict(body)
+            strategy["updated"] = now_str()
+            save_yaml(fpath, strategy)
+            return self._send(200, strategy)
+
+        return self._err(404, f"No route for POST {path}")
+
+
+# ─── Server bootstrap ───
+
+def get_local_ips():
+    ips = set()
+    try:
+        hostname = socket.gethostname()
+        for info in socket.getaddrinfo(hostname, None, socket.AF_INET):
+            ips.add(info[4][0])
+    except Exception:
+        pass
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ips.add(s.getsockname()[0])
+        s.close()
+    except Exception:
+        pass
+    return sorted(ips)
+
+
+def init_shared_files(case_dir):
+    """Ensure all required shared YAML files exist (do not overwrite)."""
+    sd = Path(case_dir) / "shared"
+    sd.mkdir(parents=True, exist_ok=True)
+    defaults = {
+        "findings.yaml": [],
+        "progress.yaml": {},
+        "answers.yaml": {},
+        "questions.yaml": [],
+        "timeline.yaml": [],
+        "session_log.yaml": [],
+        "blockers.yaml": [],
+        "strategy.yaml": {},
+    }
+    for fname, default in defaults.items():
+        fpath = sd / fname
+        if not fpath.exists():
+            save_yaml(fpath, default)
+
+
+def cmd_serve(args):
+    global _hub_started_at
+    case_dir = Path(args.case_dir).resolve()
+    if not case_dir.exists():
+        print(f"[!] Case directory not found: {case_dir}")
+        sys.exit(1)
+
+    init_shared_files(case_dir)
+    Handler.case_dir = case_dir
+    _hub_started_at = now_str()
+
+    server = http.server.ThreadingHTTPServer((args.bind, args.port), Handler)
+
+    print()
+    print("=" * 60)
+    print(f"  Collaboration Hub v3  -  port {args.port}")
+    print("=" * 60)
+    print(f"  Case dir:  {case_dir}")
+    print(f"  Bind:      {args.bind}:{args.port}")
+    print()
+    print("  Remote machines connect via:")
+    for ip in get_local_ips():
+        if not ip.startswith("127."):
+            print(f"    curl http://{ip}:{args.port}/ping")
+    print()
+    print("  Endpoints:")
+    print("    GET  /ping")
+    print("    GET  /findings | POST /findings | GET /findings/{id}")
+    print("    GET  /progress | POST /progress/{role}")
+    print("    GET  /answers  | POST /answers  | GET /answers/{category}")
+    print("    GET  /questions| POST /questions| POST /questions/{id}/reply")
+    print("    GET  /session  | POST /session/log | /session/blocker | /session/strategy")
+    print("    GET  /files/{name}  (whitelisted)")
+    print()
+    print("  Press Ctrl+C to stop.")
+    print()
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n[+] Hub stopped.")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="AutoForensicAI Collaboration Hub v3")
+    sub = parser.add_subparsers(dest="command")
+
+    p = sub.add_parser("serve", help="Start the Hub")
+    p.add_argument("case_dir", help="Path to case directory")
+    p.add_argument("--port", type=int, default=8765)
+    p.add_argument("--bind", default="0.0.0.0")
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        return
+
+    if args.command == "serve":
+        cmd_serve(args)
+
+
+if __name__ == "__main__":
+    main()

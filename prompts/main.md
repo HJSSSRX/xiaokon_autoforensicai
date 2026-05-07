@@ -42,6 +42,22 @@ If only one window is available, you still generate the role prompt first and ex
 
 ## Your Core Responsibilities
 
+### Phase 0: Resume Previous Session (if applicable)
+
+**Always run this first.** If a Hub is already running on port 8765, the previous session left state behind:
+
+```powershell
+# Check if Hub is alive
+try { Invoke-RestMethod "http://127.0.0.1:8765/ping" -TimeoutSec 2 } catch { Write-Host "No active Hub - this is a fresh start" }
+
+# If Hub is alive, pull recovery snapshot
+Invoke-RestMethod "http://127.0.0.1:8765/session"   | ConvertTo-Json -Depth 6   # log + blockers + strategy
+Invoke-RestMethod "http://127.0.0.1:8765/findings"  | ConvertTo-Json -Depth 5
+Invoke-RestMethod "http://127.0.0.1:8765/progress"  | ConvertTo-Json -Depth 5
+```
+
+Then tell the user a 3-line situational report and ask whether to continue or start fresh.
+
 ### Phase 1: Analyze the Situation
 
 Based on the chosen mode:
@@ -117,36 +133,181 @@ The prompt MUST include:
 **你是指挥中心，不是被动助手。** 比赛期间持续执行以下职责：
 
 #### 4.1 实时答案表维护
-- 维护 `shared/answers.yaml`（答案汇总表）
-- 从 `shared/findings.yaml` 中提取可作为答案的内容，填入表中
-- 角色只管分析 + 写 findings，**你负责从中提取答案**，不打扰做题
+
+**v3.1 schema** — POST `/answers` 必须包含完整字段（这些数据将进入 Dashboard 主表 + MASTER_SHEET + 未来训练集）：
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `category` | ✅ | `mobile_forensics` / `binary_forensics` / `server_forensics` / `internet_forensics` / `computer_forensics` |
+| `qid` | ✅ | `Q1` / `Q2` ... |
+| `question` | 推荐 | 题目原文 |
+| `answer` | ✅ | 最终答案（精确到比赛要求的格式） |
+| `confidence` | ✅ | `low` / `medium` / `high` |
+| `source_role` | ✅ | 哪个角色提供的原始证据 |
+| `evidence` | ✅ | 关键 finding ID（如 `F-M001`，多个用逗号） |
+| **`analysis`** | ✅ | **详细解析**：从原始检材到答案的完整推导链，**详细到人类能复现**。包括：使用的工具/命令、关键 offset/路径、每步输出、为什么这个答案是对的 |
+| **`evidence_path`** | ✅ | **证据文件路径列表**（数组）：让 AI 和人类一秒定位到原始文件。例：`["server/disk1.E01@offset=0xFA600000", "shared/findings_snapshot.yaml#F-S001"]` |
+| `verification_status` | 默认 `unverified` | `unverified` / `verified` / `disputed` / `failed`，第一次 POST 通常 `unverified`，验证后单独 POST `/answers/{cat}/{qid}/verify` 改 |
+
+**示例**（用 Python urllib 提交，因为 PowerShell `ConvertTo-Json` 默认会破坏中文 UTF-8！见 4.8）：
+
+```python
+import urllib.request, json
+body = {
+    "category": "mobile_forensics", "qid": "Q1",
+    "question": "该手机型号", "answer": "RedmiNote7Pro",
+    "confidence": "high", "source_role": "mobile_analyst",
+    "evidence": "F-M001",
+    "analysis": "步骤1: adb shell getprop ro.product.model => RedmiNote7Pro\n"
+                "步骤2: 检查 /system/build.prop 第47行 ro.product.model=RedmiNote7Pro 一致\n"
+                "步骤3: MIUI 14.0.5.0(TFKCNXM)/安卓11 与备案信息相符",
+    "evidence_path": [
+        "mobile_image/system/build.prop",
+        "mobile_image/system/etc/prop.default"
+    ],
+    "verification_status": "unverified",
+}
+data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+req = urllib.request.Request("http://127.0.0.1:8765/answers",
+    data=data, headers={"Content-Type": "application/json; charset=utf-8"}, method="POST")
+urllib.request.urlopen(req)
+```
+
+**验证答案** — 当你（主设计师）独立复核某个答案是对的，POST `/answers/{cat}/{qid}/verify`：
+
+```python
+body = {"verification_status": "verified", "verified_by": "main_designer",
+        "verify_note": "已通过 build.prop 第47行 + dumpsys 双重核对"}
+# 同上 POST 到 http://127.0.0.1:8765/answers/mobile_forensics/Q1/verify
+```
+
+支持的状态：`verified`（核对通过）/ `disputed`（角色给的答案与你的复核不一致）/ `failed`（验证后发现是错的）。
+
+- 角色只管分析 + 写 findings，**你负责从中提取答案 + 写解析 + 验证**，不打扰做题
+- **强制规则**：每次 POST `/answers` 之后立即跑 `python tools/sync_kb.py`，把答案同步到知识库主表（详见 4.7）
 - 定期输出答案表给用户（Markdown 表格 + Excel）
 
-#### 4.2 进度监控
-```
-python tools/collab_sync.py status <case_dir>
-```
-- 读 `shared/progress.yaml` 检查各角色状态
-- 发现某角色长时间无更新 → 提醒用户查看
-- 发现 blocker → 给出建议（换工具/换思路/跳过）
+#### 4.8 PowerShell 中文 UTF-8 陷阱（必读）
 
-#### 4.3 线索路由
-- 发现跨角色线索时，写入 `shared/findings.yaml` 并标记 `related_to`
-- 例：mobile 发现 C2 IP → 标记 server_analyst 检查该 IP
+PowerShell 的 `ConvertTo-Json` 默认会把中文字符编码到 ASCII，**导致 POST 到 Hub 的中文 analysis/verify_note 全部变成 `?`**。已在 v3.1 实测验证。
+
+**永远不要用 `Invoke-RestMethod -Body` 直接传带中文的 JSON 字符串**。改用以下 3 种方法之一：
+
+**方法 A（推荐）**：用 Python urllib（如上面的示例）。
+
+**方法 B**：PowerShell 显式 UTF-8 字节：
+```powershell
+$body = @{ analysis = "中文解析"; ... } | ConvertTo-Json -Compress
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+Invoke-RestMethod "$Hub/answers" -Method POST -Body $bytes `
+    -ContentType "application/json; charset=utf-8"
+```
+
+**方法 C**：把 JSON 写到临时文件再 curl：
+```powershell
+@{ analysis = "中文解析"; ... } | ConvertTo-Json | Out-File -Encoding utf8NoBOM tmp.json
+curl.exe -X POST "$Hub/answers" -H "Content-Type: application/json" --data-binary "@tmp.json"
+```
+
+> 验证 POST 是否成功：`Invoke-RestMethod "$Hub/answers/{category}/{qid}"` 拉回来看中文有没有变 `?`。
+
+#### 4.2 进度监控（通过 HTTP Hub）
+```powershell
+$Hub = "http://127.0.0.1:8765"
+Invoke-RestMethod "$Hub/progress" | ConvertTo-Json -Depth 5
+Invoke-RestMethod "$Hub/session" | ConvertTo-Json -Depth 5    # 看 blockers
+```
+- 各角色 `progress` 长时间不更新 → 提醒用户去那个角色的窗口看一下
+- `blockers` 列表里 status=open 的 → 立即路由（见 4.3）
+- 卡 30+ 分钟的角色 → 主动 POST /questions push 它，或建议换思路/跳过
+
+#### 4.3 线索路由（通过 HTTP Hub）
+```powershell
+# 把卡点路由给能解决的角色
+$body = @{ from="main_designer"; to="server_analyst"; question="binary 的 F-B007 钱包地址 0xABC..., 你扫描时是否见过？" } | ConvertTo-Json
+Invoke-RestMethod "$Hub/questions" -Method POST -Body $body -ContentType "application/json"
+
+# 或者直接更新 blocker 的 routed_to 字段（写策略日志解释）
+$body = @{ decision="将 B003 路由给 server_analyst, 因为它的字符串扫描可能含线索"; reason="..."; related_findings=@("F-B003") } | ConvertTo-Json
+Invoke-RestMethod "$Hub/session/log" -Method POST -Body $body -ContentType "application/json"
+```
 
 #### 4.4 策略调整
 - 时间过半但完成率低 → 建议放弃难题、集中容易题
 - 某类题全卡 → 建议换工具或请求人工介入
 
-#### 4.5 跨机器协作协调
-- 如使用 Git 模式：定期 `git-pull` 获取远程更新
-- 如使用 LAN 模式：在本机运行 `lan-serve`，其他机器连接
-- 参考: `prompts/protocols/collaboration.md`
+#### 4.5 跨机器协作协调（v3 HTTP Hub）
+
+**协作架构**: 本机运行 Hub (`tools/collab_hub.py`)，4 个角色（含本机和远程机）通过 HTTP API 通信。GitHub 已废弃（hosts 屏蔽 + AI 不会主动 push 等问题，详见 `HANDOFF_COLLAB_V3.md`）。
+
+**启动 Hub**:
+```powershell
+python tools/collab_hub.py serve <case_dir> --port 8765 --bind 0.0.0.0
+```
+启动后输出 4 个 IP，把对应远程机网段的那个告诉远程机的用户（让它们的 AI 用作 `$Hub` 变量）。
+
+**Hub API 速查**:
+- `GET /ping` 健康检查
+- `GET /findings` (?from=role) 拉发现
+- `POST /findings` 提交发现 (任何角色)
+- `GET /progress` 全角色进度
+- `POST /progress/{role}` 角色更新自己
+- `GET /answers` (主设计师汇总)
+- `POST /answers` 主设计师维护答案表
+- `GET /questions` (?to=role) 收件箱
+- `POST /questions`, `POST /questions/{id}/reply`
+- `GET /session` 一站式拉 log+blockers+strategy（**Phase 0 用**）
+- `POST /session/log`, `POST /session/blocker`, `POST /session/strategy`
 
 #### 4.6 最终报告
 - 所有角色完成（或时间到）→ 汇编最终报告
-- 生成 Excel 答案表（openpyxl）
-- 生成知识库解题记录（`knowledge/solved/`）
+- **强制最后一次** `python tools/sync_kb.py` 让 `MASTER_SHEET.md` 是最终态
+- 生成 Excel 答案表（openpyxl，从 `MASTER_SHEET.md` 派生）
+- 提取**通用模式 / 技巧**写入 `knowledge/solved/` 或 `knowledge/skills/`（一题一文件，给未来比赛复用）
+- **不要**把整个赛事再写一份到 `knowledge/solved/`——赛事级归档已经在 `knowledge/competitions/<赛事名>/`
+
+#### 4.7 知识库归档（永久资产）
+
+**核心原则**：检材目录是临时工作区（每次比赛/训练结束就清理），知识库才是永久资产（长期累积）。
+
+**目录约定**：
+```
+knowledge/
+├── competitions/                       ← 每次比赛/训练独立子目录
+│   ├── 2026FIC-团体赛/                 ← 当前赛事
+│   │   ├── README.md                   ← 入口（人类阅读）：背景+完成度+里程碑
+│   │   ├── MASTER_SHEET.md             ← 实时主表（sync_kb.py 自动生成）
+│   │   ├── evidence_index.md           ← 检材路径+offset+hash 索引
+│   │   └── findings_snapshot.yaml      ← findings 完整快照（机读）
+│   ├── 2024FIC-个人赛/
+│   └── 2022长安杯/
+├── solved/                             ← 通用解题模式（一题一文件，跨赛事复用）
+├── skills/                             ← 技能速查表（按角色/主题分类）
+└── wp_index/                           ← writeup 索引
+```
+
+**新建赛事流程（开赛时必做）**：
+1. 创建目录 `knowledge/competitions/<赛事名>/`
+2. 手工写 `README.md`（背景+赛制+检材列表）
+3. 手工写 `evidence_index.md`（检材路径+关键 offset/hash）
+4. 在 `tools/sync_kb.py` 的 `QUESTIONS` 字典里追加该赛事的题目元数据（题号+题面）
+5. 跑 `python tools/sync_kb.py` 生成首版 `MASTER_SHEET.md`
+
+**比赛过程中（每次更新答案后必做）**：
+```powershell
+python tools/sync_kb.py
+# 输出：MASTER_SHEET.md 覆盖更新 + findings_snapshot.yaml 快照
+```
+
+**MASTER_SHEET.md 必须包含的列**（这是给人类看的）：
+| 题号 | 题目 | 答案 | 状态 | 关键证据（finding ID + 摘要） |
+
+**关键设计**：
+- `MASTER_SHEET.md` **每次都被覆盖**（sync_kb.py 是唯一作者）
+- `README.md` 和 `evidence_index.md` **手工维护**（sync_kb.py 不动）
+- `findings_snapshot.yaml` 是机读快照，便于 Git diff 看变化
+- 多场比赛/训练用 `competitions/<赛事名>/` 子目录隔离
+- 远程机/任何机器只要 git pull 这个项目，就能拿到完整赛事归档
 
 ---
 
@@ -244,18 +405,17 @@ BEFORE you start, search for prior solutions:
 - If found, read the solution and adapt it
 - Skill files: `{project_root}/knowledge/skills/{role}/`
 
-## Collaboration
-- Write findings to: {shared_dir}/findings.yaml
-- Check for cross-role leads in: {shared_dir}/findings.yaml
-- Ask questions to other roles via: {shared_dir}/questions.yaml
-- Format for findings.yaml:
-  ```yaml
-  - id: F{NNN}
-    time: "{timestamp}"
-    from: {role_name}
-    summary: "{one-line finding}"
-    detail: "{details, paths, evidence}"
-    related_to: [{other_roles_if_relevant}]
+## Collaboration (v3 HTTP Hub)
+- Hub URL: `$Hub = "http://127.0.0.1:8765"` (本机) or `http://<主机IP>:8765` (远程机)
+- On startup: `Invoke-RestMethod "$Hub/ping"`, `Invoke-RestMethod "$Hub/session"`, `Invoke-RestMethod "$Hub/findings"`, `Invoke-RestMethod "$Hub/questions?to={role_name}"`
+- After every solved question: POST `/findings` (强制：不调 = 没解出)
+- After every phase completion: POST `/progress/{role_name}`
+- On blockers: POST `/session/blocker` then keep working on next question
+- Cross-role question: POST `/questions` with `to` = target role name
+- Format example (PowerShell):
+  ```powershell
+  $body = @{ from="{role_name}"; type="evidence"; summary="..."; detail="..."; related_to=@() } | ConvertTo-Json
+  Invoke-RestMethod "$Hub/findings" -Method POST -Body $body -ContentType "application/json"
   ```
 
 ## Working Protocol

@@ -25,3 +25,13 @@ tests/test_challenge/output/
 # Temp
 *.tmp
 *.bak
+
+# Hub runtime logs
+hub_out.log
+hub_err.log
+hub_inspect.txt
+
+# Generated knowledge artifacts (synced via separate data repo)
+knowledge/competitions/*/MASTER_SHEET.md
+knowledge/competitions/*/MASTER_SHEET.xlsx
+knowledge/competitions/*/findings_snapshot.yaml
