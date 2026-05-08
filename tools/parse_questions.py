@@ -37,6 +37,7 @@ JSON 格式识别规则 (didctf 常见 response 结构):
   {"data": [{"id": 1, "title": "...", "type": "...", "score": 10, "category": "..."}]}
   或 {"list": [...]} 或直接 [...]
 """
+from __future__ import annotations
 import argparse
 import io
 import json
@@ -45,8 +46,6 @@ import sys
 from pathlib import Path
 
 import yaml
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 # ─── 常量 ─────────────────────────────────────────────────────────────────────
 
@@ -335,6 +334,8 @@ def gen_role_prompt_table(grouped: dict) -> str:
 # ─── 主函数 ───────────────────────────────────────────────────────────────────
 
 def main():
+    if hasattr(sys.stdout, "buffer"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
     p = argparse.ArgumentParser(description="题目解析工具 (C2 方案)")
     src = p.add_mutually_exclusive_group()
     src.add_argument("--md",    help="Markdown 题目文件路径")
