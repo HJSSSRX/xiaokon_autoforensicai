@@ -1,6 +1,6 @@
 # 续战提示词 v2 — binary_analyst (2026FIC)
 
-> 把下面整段直接粘给 binary 机的 AI（替换 [HUB_IP]）
+> Hub IP 已固化为 `172.21.183.206`。把下面三反引号之间的整段粘给 binary 机的 AI 即可。
 
 ---
 
@@ -61,14 +61,14 @@ for c in candidates:
 主指挥 (captain/main_designer) 会通过 watcher 主动向你发广播指令。
 你必须:
 1. 每完成一个步骤 (无论成功/失败), 立即 POST /findings 汇报 (见下方协作铁律)
-2. 每完成一题, 在 POST /answers 之后, 立即 GET http://[HUB_IP]:8765/findings?from=main_designer 看有没有新指令
+2. 每完成一题, 在 POST /answers 之后, 立即 GET http://172.21.183.206:8765/findings?from=main_designer 看有没有新指令
 3. 如看到 "[CAPTAIN AUTO]" 或 type="instruction" 的 finding, 优先处理
 4. 超过 30 分钟无进展时, POST 一条 finding summary="heartbeat: 仍在 xxx 步骤" 证明你活着
 
 心跳命令 (Python):
 ```python
 import urllib.request, json
-r = urllib.request.urlopen("http://[HUB_IP]:8765/findings?from=main_designer", timeout=3)
+r = urllib.request.urlopen("http://172.21.183.206:8765/findings?from=main_designer", timeout=3)
 instructions = [f for f in json.loads(r.read()) if f.get("type")=="instruction"]
 for inst in instructions[-5:]:  # 最近 5 条
     if "binary_analyst" in inst.get("target_roles", []):
@@ -133,7 +133,7 @@ import urllib.request, json
 def post(path, data):
     body = json.dumps(data, ensure_ascii=False).encode("utf-8")
     return urllib.request.urlopen(
-      urllib.request.Request(f"http://[HUB_IP]:8765{path}",
+      urllib.request.Request(f"http://172.21.183.206:8765{path}",
         data=body,
         headers={"Content-Type":"application/json; charset=utf-8"},
         method="POST")).read().decode("utf-8")

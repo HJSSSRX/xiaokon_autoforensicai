@@ -1,6 +1,6 @@
 # 续战提示词 v2 — computer_analyst (2026FIC)
 
-> 把下面整段直接粘给 computer 机的 AI（替换 [HUB_IP]）
+> Hub IP 已固化为 `172.21.183.206`。把下面三反引号之间的整段粘给 computer 机的 AI 即可。
 
 ---
 
@@ -43,13 +43,13 @@
 主指挥 (captain/main_designer) 通过 watcher 主动向你发广播指令。
 你必须:
 1. 每完成一个步骤, 立即 POST /findings 汇报
-2. 每完成一题, POST /answers 后立即 GET http://[HUB_IP]:8765/findings?from=main_designer
+2. 每完成一题, POST /answers 后立即 GET http://172.21.183.206:8765/findings?from=main_designer
 3. 看到 type="instruction" 且 target_roles 包含 "computer_analyst" 的 finding, 优先处理
 4. 超过 30 分钟无进展时, POST heartbeat finding 证明你活着
 
 ```python
 import urllib.request, json
-r = urllib.request.urlopen("http://[HUB_IP]:8765/findings?from=main_designer", timeout=3)
+r = urllib.request.urlopen("http://172.21.183.206:8765/findings?from=main_designer", timeout=3)
 for inst in [f for f in json.loads(r.read()) if f.get("type")=="instruction"][-5:]:
     if "computer_analyst" in inst.get("target_roles", []):
         print(f"[指挥] {inst['summary']}")
@@ -130,7 +130,7 @@ import urllib.request, json
 def post(path, data):
     body = json.dumps(data, ensure_ascii=False).encode("utf-8")
     return urllib.request.urlopen(
-      urllib.request.Request(f"http://[HUB_IP]:8765{path}",
+      urllib.request.Request(f"http://172.21.183.206:8765{path}",
         data=body,
         headers={"Content-Type":"application/json; charset=utf-8"},
         method="POST")).read().decode("utf-8")
