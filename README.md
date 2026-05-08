@@ -28,10 +28,18 @@ ForHacker 是一套基于提示词工程的多 Agent 协作系统，专为电子
 
 ## 快速开始
 
+> **新用户首选 `xiaokon-all` 统一全量仓库**：包含框架代码 + 知识库 + 解题方案，clone 一次即可。
+> 详细部署步骤见 `DEPLOY.md`。
+
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/HJSSSRX/xiaokon_autoforensicai.git forhacker
+# 推荐：统一全量仓库
+git clone https://github.com/HJSSSRX/xiaokon-all.git forhacker
+
+# 或：仅框架（旧骨架仓库）
+# git clone https://github.com/HJSSSRX/xiaokon_autoforensicai.git forhacker
+
 cd forhacker
 ```
 

@@ -25,3 +25,22 @@ tests/test_challenge/output/
 # Temp
 *.tmp
 *.bak
+
+# Hub runtime logs
+hub_out.log
+hub_err.log
+hub_inspect.txt
+
+# Diagnostic dump artifacts (one-shot debug outputs)
+backfill_log.txt
+check.txt
+fix_log.txt
+peek.txt
+peek_yaml.txt
+state.txt
+sync_log.txt
+
+# Generated knowledge artifacts (synced via separate data repo)
+knowledge/competitions/*/MASTER_SHEET.md
+knowledge/competitions/*/MASTER_SHEET.xlsx
+knowledge/competitions/*/findings_snapshot.yaml

@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026FIC 团体赛 · 实时协作面板</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-card-hover: #1c2330;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #a371f7;
+    --orange: #ffa657;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+  }
+  h1, h2, h3 { font-weight: 600; }
+  h1 { font-size: 20px; }
+  h2 { font-size: 16px; margin-bottom: 8px; }
+  h3 { font-size: 14px; color: var(--text-dim); margin-bottom: 6px; }
+
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .header-info { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-dim); }
+  .header-info .pulse { color: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .toggle-auto {
+    cursor: pointer; padding: 4px 10px; border: 1px solid var(--border);
+    border-radius: 4px; background: var(--bg-card); color: var(--text);
+    font-size: 12px; transition: all 0.2s;
+  }
+  .toggle-auto:hover { border-color: var(--accent); }
+  .toggle-auto.on { border-color: var(--green); color: var(--green); }
+
+  .total-bar {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+  }
+  .total-bar .label { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .total-bar .label span:first-child { font-weight: 600; }
+  .total-bar .label span:last-child { font-family: monospace; font-size: 16px; color: var(--accent); }
+  .progress-bar {
+    height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--green), var(--accent));
+    transition: width 0.4s;
+  }
+
+  .roles-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px; margin-bottom: 16px;
+  }
+  .role-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; transition: all 0.2s;
+  }
+  .role-card:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+  .role-card.stale { border-color: var(--orange); }
+  .role-card.offline { border-color: var(--red); }
+  .role-name {
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 600; margin-bottom: 8px;
+  }
+  .role-status {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+  }
+  .status-idle { background: rgba(139, 148, 158, 0.2); color: var(--text-dim); }
+  .status-in_progress { background: rgba(210, 153, 34, 0.2); color: var(--yellow); }
+  .status-paused { background: rgba(255, 166, 87, 0.2); color: var(--orange); }
+  .status-done { background: rgba(63, 185, 80, 0.2); color: var(--green); }
+  .status-blocked { background: rgba(248, 81, 73, 0.2); color: var(--red); }
+  .role-progress { font-family: monospace; font-size: 13px; color: var(--accent); margin-bottom: 4px; }
+  .role-meta { font-size: 11px; color: var(--text-dim); }
+  .role-task { font-size: 12px; margin-top: 6px; padding: 6px; background: var(--bg);
+              border-radius: 4px; border-left: 2px solid var(--accent);
+              max-height: 50px; overflow: hidden; text-overflow: ellipsis; }
+  .role-blocker { font-size: 12px; margin-top: 6px; padding: 6px;
+                  background: rgba(248, 81, 73, 0.1); border-radius: 4px;
+                  border-left: 2px solid var(--red); color: var(--red); }
+
+  .matrix-section { margin-bottom: 16px; }
+  .matrix {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; overflow-x: auto;
+  }
+  .matrix-row { display: flex; align-items: center; margin-bottom: 4px; gap: 8px; }
+  .matrix-row:last-child { margin-bottom: 0; }
+  .matrix-label { width: 100px; font-size: 12px; color: var(--text-dim); flex-shrink: 0; }
+  .matrix-cells { display: flex; gap: 3px; flex: 1; flex-wrap: wrap; }
+  .cell {
+    width: 24px; height: 24px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; cursor: help;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .cell.solved { background: rgba(63, 185, 80, 0.3); border-color: var(--green); color: var(--green); }
+  .cell.partial { background: rgba(210, 153, 34, 0.2); border-color: var(--yellow); color: var(--yellow); }
+  .cell.empty { color: var(--text-dim); }
+  .matrix-summary { width: 80px; text-align: right; font-family: monospace; font-size: 12px; flex-shrink: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+  }
+  .panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .panel-header .count {
+    background: var(--bg); padding: 2px 8px; border-radius: 10px;
+    font-family: monospace; font-size: 11px; color: var(--accent);
+  }
+
+  .stream { max-height: 400px; overflow-y: auto; }
+  .stream-item {
+    padding: 8px; border-bottom: 1px solid var(--border);
+    font-size: 12px; transition: background 0.2s;
+  }
+  .stream-item:last-child { border-bottom: none; }
+  .stream-item:hover { background: var(--bg); }
+  .stream-time { color: var(--text-dim); font-family: monospace; font-size: 11px; }
+  .stream-id { color: var(--purple); font-family: monospace; font-weight: 600; margin: 0 6px; }
+  .stream-from { color: var(--accent); font-size: 11px; }
+  .stream-summary { margin-top: 4px; color: var(--text); }
+
+  .blockers-list, .questions-list { max-height: 400px; overflow-y: auto; }
+  .blocker-item, .question-item {
+    padding: 8px; border-left: 3px solid var(--red);
+    background: rgba(248, 81, 73, 0.05);
+    margin-bottom: 6px; border-radius: 4px;
+  }
+  .blocker-item.routed { border-left-color: var(--yellow); background: rgba(210, 153, 34, 0.05); }
+  .blocker-item.resolved { border-left-color: var(--green); background: rgba(63, 185, 80, 0.05); opacity: 0.6; }
+  .question-item { border-left-color: var(--purple); background: rgba(163, 113, 247, 0.05); }
+  .question-item.replied { opacity: 0.6; }
+  .blocker-meta, .question-meta {
+    display: flex; justify-content: space-between; font-size: 11px;
+    color: var(--text-dim); margin-bottom: 4px;
+  }
+
+  .empty-state {
+    color: var(--text-dim); font-size: 12px; text-align: center; padding: 20px;
+  }
+
+  /* Modal for finding detail */
+  .modal-bg {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal-box {
+    background: var(--bg-card); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 20px; max-width: 800px; width: 90%;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .modal-close {
+    cursor: pointer; background: none; border: none; color: var(--text-dim);
+    font-size: 20px; padding: 0 8px;
+  }
+  .modal-close:hover { color: var(--red); }
+  .modal-body { font-size: 13px; }
+  .modal-body .field { margin-bottom: 10px; }
+  .modal-body .field-label {
+    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    margin-bottom: 4px; letter-spacing: 0.5px;
+  }
+  .modal-body .field-value {
+    background: var(--bg); padding: 8px 10px; border-radius: 4px;
+    border: 1px solid var(--border); white-space: pre-wrap; word-break: break-word;
+    font-family: monospace; font-size: 12px;
+  }
+  .modal-body .related-link {
+    display: inline-block; padding: 2px 8px; margin: 2px;
+    background: var(--bg); border: 1px solid var(--purple); border-radius: 10px;
+    color: var(--purple); cursor: pointer; font-family: monospace; font-size: 11px;
+  }
+  .modal-body .related-link:hover { background: rgba(163,113,247,0.2); }
+
+  .stream-item { cursor: pointer; }
+
+  /* Timeline */
+  .timeline { max-height: 280px; overflow-y: auto; position: relative; }
+  .timeline-item {
+    padding: 8px 8px 8px 24px; border-left: 2px solid var(--border);
+    margin-left: 8px; position: relative; font-size: 12px;
+  }
+  .timeline-item:before {
+    content: ''; position: absolute; left: -5px; top: 12px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  }
+  .timeline-item.decision:before { background: var(--green); }
+  .timeline-time { color: var(--text-dim); font-family: monospace; font-size: 11px; }
+  .timeline-decision { font-weight: 600; margin: 2px 0; }
+  .timeline-reason { color: var(--text-dim); font-size: 11px; }
+
+  .strategy-box {
+    padding: 8px; background: var(--bg); border-radius: 4px;
+    border-left: 3px solid var(--green); font-size: 12px;
+  }
+  .strategy-box .phase {
+    font-weight: 600; color: var(--green); margin-bottom: 6px;
+  }
+  .strategy-box ul { margin-left: 18px; margin-top: 4px; }
+
+  /* Heartbeat indicator (proves the dashboard JS is alive) */
+  .heartbeat {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); margin-right: 6px;
+    animation: heartbeat 1s ease-in-out infinite;
+  }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.4); opacity: 0.5; }
+  }
+
+  /* New activity flash on role cards */
+  .role-card.flash { animation: flashbg 1.5s ease-out; }
+  @keyframes flashbg {
+    0%   { background: rgba(63,185,80,0.4); }
+    100% { background: var(--bg-card); }
+  }
+
+  /* MAIN TABLE — the captain's view */
+  .answer-table-wrap {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; margin-bottom: 16px;
+  }
+  .answer-table-toolbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  .filter-btn {
+    cursor: pointer; padding: 4px 10px; border: 1px solid var(--border);
+    border-radius: 4px; background: var(--bg); color: var(--text-dim);
+    font-size: 11px; transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,0.1); }
+  .filter-btn.warn { border-color: var(--orange); color: var(--orange); }
+  .filter-btn.warn.active { background: rgba(255,166,87,0.1); }
+  .filter-btn.ok { border-color: var(--green); color: var(--green); }
+  .filter-btn.ok.active { background: rgba(63,185,80,0.1); }
+
+  .answer-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .answer-table th {
+    text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--border);
+    font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.5px; background: var(--bg-card); position: sticky; top: 0; z-index: 1;
+  }
+  .answer-table td {
+    padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+  .answer-table tr.row-main { cursor: pointer; transition: background 0.15s; }
+  .answer-table tr.row-main:hover { background: var(--bg-card-hover); }
+  .answer-table tr.row-empty td { color: var(--text-dim); }
+  .answer-table tr.row-detail { display: none; background: var(--bg); }
+  .answer-table tr.row-detail.show { display: table-row; }
+  .answer-table tr.row-detail td { padding: 12px 16px; }
+
+  .qid-cell { font-family: monospace; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .answer-cell { font-family: monospace; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .answer-cell.has-ans { color: var(--green); }
+  .answer-cell.copyable {
+    cursor: pointer; padding: 3px 8px; border-radius: 4px;
+    border: 1px solid transparent; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .answer-cell.copyable:hover {
+    background: rgba(63, 185, 80, 0.12);
+    border-color: rgba(63, 185, 80, 0.4);
+  }
+  .answer-cell.copyable .copy-icon { font-size: 11px; opacity: 0.5; transition: opacity 0.15s; }
+  .answer-cell.copyable:hover .copy-icon { opacity: 1; }
+  .answer-cell.copyable.copied {
+    background: rgba(63, 185, 80, 0.3) !important;
+    border-color: var(--green) !important;
+  }
+  .answer-cell.copyable.copied .copy-icon { color: var(--green); opacity: 1; }
+  .answer-cell.copyable .copy-text {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 200px; display: inline-block;
+  }
+  .summary-cell { color: var(--text-dim); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .v-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; cursor: pointer;
+  }
+  .v-unverified { background: rgba(210,153,34,0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+  .v-verified   { background: rgba(63,185,80,0.2);  color: var(--green);  border: 1px solid var(--green); }
+  .v-disputed   { background: rgba(248,81,73,0.2);  color: var(--red);    border: 1px solid var(--red); }
+  .v-failed     { background: rgba(139,148,158,0.2); color: var(--text-dim); border: 1px solid var(--text-dim); }
+  .v-empty      { background: var(--bg); color: var(--text-dim); border: 1px dashed var(--border); }
+
+  .verify-actions { display: inline-flex; gap: 4px; margin-left: 6px; }
+  .verify-btn {
+    cursor: pointer; padding: 1px 6px; border: 1px solid var(--border);
+    background: var(--bg); border-radius: 3px; font-size: 10px;
+    transition: all 0.1s;
+  }
+  .verify-btn:hover.ok    { border-color: var(--green); color: var(--green); }
+  .verify-btn:hover.fail  { border-color: var(--red);   color: var(--red); }
+  .verify-btn:hover.disp  { border-color: var(--orange); color: var(--orange); }
+
+  .detail-grid { display: grid; grid-template-columns: 100px 1fr; gap: 6px 12px; }
+  .detail-grid .k { color: var(--text-dim); font-size: 11px; padding-top: 2px; }
+  .detail-grid .v { font-size: 12px; }
+  .detail-grid pre {
+    background: var(--bg-card); padding: 8px 10px; border-radius: 4px;
+    border: 1px solid var(--border); white-space: pre-wrap; word-break: break-word;
+    font-family: monospace; font-size: 11px; margin: 0;
+  }
+  .ev-path-list a {
+    display: inline-block; padding: 2px 6px; margin: 2px;
+    background: var(--bg-card); color: var(--accent); border-radius: 3px;
+    font-family: monospace; font-size: 11px; text-decoration: none;
+  }
+  .ev-path-list a:hover { background: var(--bg-card-hover); }
+
+  .hub-restart-banner {
+    display: none; padding: 6px 12px; background: rgba(255,166,87,0.15);
+    border: 1px solid var(--orange); border-radius: 4px;
+    color: var(--orange); margin-bottom: 12px; font-size: 12px;
+  }
+  .hub-restart-banner.show { display: block; }
+
+  .scrollbar::-webkit-scrollbar { width: 8px; }
+  .scrollbar::-webkit-scrollbar-track { background: var(--bg); }
+  .scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>2026FIC 团体赛 · 队长控制台</h1>
+  <div class="header-info">
+    <span class="heartbeat" title="JS 心跳：代表面板在跑"></span>
+    <span id="hub-status">● Hub 连接中</span>
+    <span id="last-update">上次刷新：—</span>
+    <span id="hub-uptime" style="font-size:11px;color:var(--text-dim);"></span>
+    <button id="toggle-auto" class="toggle-auto on" onclick="toggleAuto()">自动刷新 5s ●</button>
+    <button class="toggle-auto" onclick="refresh()">手动刷新</button>
+  </div>
+</div>
+
+<div id="hub-restart-banner" class="hub-restart-banner">
+  ⚠ Hub 已重启（<span id="hub-restart-time"></span>）——面板已重新同步。
+</div>
+
+<div class="total-bar">
+  <div class="label">
+    <span>总进度</span>
+    <span id="total-text">— / —</span>
+  </div>
+  <div class="progress-bar"><div id="total-fill" class="progress-fill" style="width:0%"></div></div>
+</div>
+
+<div id="roles" class="roles-grid"></div>
+
+<!-- MAIN ANSWER TABLE — the captain's view -->
+<div class="answer-table-wrap">
+  <div class="answer-table-toolbar">
+    <strong style="margin-right:8px;">📖 题目主表</strong>
+    <span style="color:var(--text-dim);font-size:11px;">点击行展开看解析与证据。验证按钮只队长可点。</span>
+    <span style="flex:1;"></span>
+    <button class="filter-btn active" data-filter="all"     onclick="setFilter('all')">全部 <span id="ft-all">0</span></button>
+    <button class="filter-btn ok"     data-filter="answered" onclick="setFilter('answered')">已答 <span id="ft-answered">0</span></button>
+    <button class="filter-btn warn"   data-filter="unanswered" onclick="setFilter('unanswered')">未答 <span id="ft-unanswered">0</span></button>
+    <button class="filter-btn ok"     data-filter="verified" onclick="setFilter('verified')">✓已验证 <span id="ft-verified">0</span></button>
+    <button class="filter-btn warn"   data-filter="unverified" onclick="setFilter('unverified')">⚠未验证 <span id="ft-unverified">0</span></button>
+    <button class="filter-btn"        data-filter="disputed" onclick="setFilter('disputed')">×争议 <span id="ft-disputed">0</span></button>
+    <input id="table-search" type="text" placeholder="🔍 搜索题号/题面/答案/解析"
+           oninput="renderTable()"
+           style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;width:200px;">
+  </div>
+  <table class="answer-table">
+    <thead>
+      <tr>
+        <th style="width:8%;">题号</th>
+        <th style="width:18%;">题目</th>
+        <th style="width:18%;">答案</th>
+        <th style="width:24%;">解析摘要</th>
+        <th style="width:18%;">证据</th>
+        <th style="width:14%;">验证</th>
+      </tr>
+    </thead>
+    <tbody id="answer-tbody"></tbody>
+  </table>
+</div>
+
+<div class="matrix-section" style="margin-bottom:16px;">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>题目矩阵 <span style="font-size:11px;color:var(--text-dim);font-weight:normal;">（点击格子跳到详情）</span></h2>
+      <span class="count">绿=已答 / 灰=未答</span>
+    </div>
+    <div id="matrix" class="matrix"></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>实时发现流 <span style="font-size:11px;color:var(--text-dim);font-weight:normal;">（点击看详情）</span></h2>
+      <span id="findings-count" class="count">0</span>
+    </div>
+    <div id="stream" class="stream scrollbar"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <h2>卡点 & 跨角色问题</h2>
+      <span id="issues-count" class="count">0</span>
+    </div>
+    <h3 style="margin-top: 8px;">卡点 (blockers)</h3>
+    <div id="blockers" class="blockers-list scrollbar"></div>
+    <h3 style="margin-top: 12px;">跨角色问题</h3>
+    <div id="questions" class="questions-list scrollbar"></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>主设计师决策时间轴</h2>
+      <span id="timeline-count" class="count">0</span>
+    </div>
+    <div id="timeline" class="timeline scrollbar"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <h2>当前策略</h2>
+    </div>
+    <div id="strategy"></div>
+  </div>
+</div>
+
+<!-- Modal for finding detail -->
+<div id="modal" class="modal-bg" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-title">Finding Detail</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="modal-body" class="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── Configuration ───
+const HUB = window.location.origin;  // 同源（如果通过 /dashboard 路由打开）
+const REFRESH_MS = 5000;
+
+// 题目元数据 — 与 sync_kb.py 保持一致 (items: [qid, question_text])
+const QUESTIONS = {
+  mobile_forensics: {
+    title: "手机取证", owner: "mobile_analyst",
+    items: [
+      ["Q1",  "该手机型号"],
+      ["Q2",  "李安弘计划前往迪拜的日期"],
+      ["Q3",  "与网站搭建人员沟通的 APP 安装日期"],
+      ["Q4",  "该 APP 聊天数据库文件名"],
+      ["Q5",  "数据库解密密码 (SQLCipher)"],
+      ["Q6",  "云服务器商家备用钱包地址"],
+      ["Q7",  "给搭建人员第一次转账 hash 前 6 位"],
+      ["Q8",  "主动向 AI 提问次数"],
+      ["Q9",  "AI 软件调用本地 AI 模型版本"],
+      ["Q10", "无人机飞行县/区"],
+      ["Q11", "视频类 APP 涉敏感权限 (多选)"],
+      ["Q12", "网络断开时加载的本地离线页面"],
+      ["Q13", "数据上传地址 (解码后)"],
+      ["Q14", "存用户信息的 SQLite 表名"],
+      ["Q15", "assets/config.dat 解密后的 USDT 钱包"],
+      ["Q16", "JS Bridge 暴露的获取通讯录方法"],
+      ["Q17", "备用服务器完整域名:端口"],
+    ],
+  },
+  binary_forensics: {
+    title: "二进制取证", owner: "binary_analyst",
+    items: [
+      ["Q1", "SampleVC.exe MD5"],
+      ["Q2", "编译日期"],
+      ["Q3", "正确的密码"],
+      ["Q4", "解密后文件后缀"],
+      ["Q5", "李安弘虚拟币收款总金额"],
+    ],
+  },
+  server_forensics: {
+    title: "服务器取证", owner: "server_analyst",
+    items: [
+      ["Q1",  "操作系统版本"],
+      ["Q2",  "根分区硬盘 UUID"],
+      ["Q3",  "最新 docker 镜像创建时间"],
+      ["Q4",  "根分区快照路径"],
+      ["Q5",  "网站后台管理入口文件名"],
+      ["Q6",  "网站 ICP 备案号"],
+      ["Q7",  "网站主域名"],
+      ["Q8",  "分类3视频拼音"],
+      ["Q9",  "站点设置页面前端模板源文件"],
+      ["Q10", "伪静态规则文件 SM3"],
+      ["Q11", "关联数据库 IP"],
+      ["Q12", "数据库容器技术"],
+      ["Q13", "4000 端口备份数据库版本"],
+      ["Q14", "新注册用户数最多的日期"],
+      ["Q15", "马慧美最后登录 IP"],
+      ["Q16", "未被使用的文件系统 (A/B/C/D)"],
+      ["Q17", "已安装数据库 (多选)"],
+    ],
+  },
+  internet_forensics: {
+    title: "互联网取证", owner: "server_analyst",
+    items: [
+      ["Q1", "售卖卡密的公开群组 ID"],
+      ["Q2", "备份数据库视频图片文件名"],
+      ["Q3", "ngrok 提供的域名"],
+    ],
+  },
+  computer_forensics: {
+    title: "计算机取证", owner: "computer_analyst",
+    items: [
+      ["Q1",  "操作系统版本号"],
+      ["Q2",  "钓鱼邮件发送方邮箱"],
+      ["Q3",  "黄金换现金商家联系方式"],
+      ["Q4",  "推广设计图中 apk 下载链接"],
+      ["Q5",  "VPN 软件代理端口"],
+      ["Q6",  "AI 软件当前模型类型"],
+      ["Q7",  "AI 软件 apiKey"],
+      ["Q8",  "勒索软件解密服务联系方式"],
+      ["Q9",  "存放黄金的保险柜编号"],
+      ["Q10", "保险柜密码"],
+    ],
+  },
+};
+const ROLE_NAMES = {
+  computer_analyst: "计算机",
+  mobile_analyst:   "手机",
+  server_analyst:   "服务器",
+  binary_analyst:   "二进制",
+};
+const STATUS_EMOJI = {
+  idle: "💤", in_progress: "🟡", paused: "⏸", done: "✅", blocked: "🔴",
+};
+
+let autoRefreshOn = true;
+let timer = null;
+
+// ─── Helpers ───
+function fmtTimeAgo(timeStr) {
+  if (!timeStr) return "从未";
+  const t = new Date(timeStr.replace(" ", "T"));
+  const diff = (Date.now() - t.getTime()) / 1000;
+  if (diff < 60) return `${Math.floor(diff)}s 前`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}min 前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h 前`;
+  return `${Math.floor(diff / 86400)}d 前`;
+}
+function staleClass(timeStr) {
+  if (!timeStr) return "offline";
+  const diff = (Date.now() - new Date(timeStr.replace(" ", "T")).getTime()) / 1000;
+  if (diff > 7200) return "stale";
+  if (diff > 21600) return "offline";
+  return "";
+}
+function escHtml(s) {
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+async function fetchJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`${url} → ${r.status}`);
+  return r.json();
+}
+
+// ─── Render ───
+function renderRoles(progress, findings) {
+  const findingsByRole = {};
+  for (const f of findings) {
+    findingsByRole[f.from] = (findingsByRole[f.from] || 0) + 1;
+  }
+
+  const roles = ["computer_analyst", "mobile_analyst", "server_analyst", "binary_analyst"];
+  const wrap = document.getElementById("roles");
+  wrap.innerHTML = roles.map(r => {
+    const p = progress[r] || { status: "idle", completed: [], pending: [], updated: "" };
+    const stale = staleClass(p.updated);
+    const fcount = findingsByRole[r] || 0;
+    return `
+      <div class="role-card ${stale}">
+        <div class="role-name">
+          <span>${STATUS_EMOJI[p.status] || "?"} ${ROLE_NAMES[r]}</span>
+          <span class="role-status status-${p.status}">${p.status}</span>
+        </div>
+        <div class="role-progress">
+          ${(p.completed || []).length} 完成 · ${(p.pending || []).length} 待办 · ${fcount} findings
+        </div>
+        <div class="role-meta">
+          上次更新：${fmtTimeAgo(p.updated)}
+          ${stale === "offline" ? " · ⚠ 长时间未上报" : ""}
+          ${stale === "stale" ? " · ⏰ 较久未更新" : ""}
+        </div>
+        ${p.current_task ? `<div class="role-task">${escHtml(p.current_task)}</div>` : ""}
+        ${p.blocker ? `<div class="role-blocker">🚧 ${escHtml(p.blocker)}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function renderMatrix(answers, findings) {
+  // findings 里被引用过 evidence 的题号 → partial
+  const partialQids = new Set();
+  for (const f of findings) {
+    // findings 自身没有 qid 字段，用 summary 里的 Q\d+ 粗匹配
+    const m = (f.summary || "").match(/Q\d+/g);
+    if (m) m.forEach(q => partialQids.add(`${f.from}::${q}`));
+  }
+
+  const wrap = document.getElementById("matrix");
+  wrap.innerHTML = Object.entries(QUESTIONS).map(([cat, meta]) => {
+    const list = (answers[cat] || []);
+    const ansMap = {};
+    for (const a of list) {
+      if (a && a.qid) ansMap[a.qid] = a;
+    }
+    let solved = 0;
+    const cells = [];
+    for (let i = 1; i <= meta.count; i++) {
+      const qid = "Q" + i;
+      const a = ansMap[qid];
+      const hasAns = a && a.answer;
+      if (hasAns) solved++;
+      const tooltip = a
+        ? `${qid}: ${escHtml(a.answer || "—")}\n证据: ${escHtml(a.evidence || "")}\n(点击跳到该题详情)`
+        : `${qid}: 未答（点击跳到该题）`;
+      cells.push(`<div class="cell ${hasAns ? "solved" : "empty"}" title="${tooltip}" onclick="jumpToQuestion('${cat}', '${qid}')" style="cursor:pointer;">${i}</div>`);
+    }
+    const pct = meta.count ? Math.round(solved * 100 / meta.count) : 0;
+    return `
+      <div class="matrix-row">
+        <div class="matrix-label">${meta.title}</div>
+        <div class="matrix-cells">${cells.join("")}</div>
+        <div class="matrix-summary">${solved}/${meta.count} (${pct}%)</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTotal(answers) {
+  let total = 0, done = 0;
+  for (const [cat, meta] of Object.entries(QUESTIONS)) {
+    total += meta.count;
+    const list = answers[cat] || [];
+    for (const a of list) if (a && a.answer) done++;
+  }
+  const pct = total ? (done * 100 / total).toFixed(1) : 0;
+  document.getElementById("total-text").textContent = `${done} / ${total}  (${pct}%)`;
+  document.getElementById("total-fill").style.width = pct + "%";
+}
+
+function renderStream(findings) {
+  const sorted = findings.slice().sort((a, b) => (b.time || "").localeCompare(a.time || "")).slice(0, 30);
+  document.getElementById("findings-count").textContent = findings.length;
+  const wrap = document.getElementById("stream");
+  if (!sorted.length) {
+    wrap.innerHTML = '<div class="empty-state">暂无 finding</div>';
+    return;
+  }
+  wrap.innerHTML = sorted.map(f => `
+    <div class="stream-item" onclick="showFindingById('${escHtml(f.id)}')">
+      <div>
+        <span class="stream-time">${(f.time || "").slice(11, 19)}</span>
+        <span class="stream-id">${escHtml(f.id)}</span>
+        <span class="stream-from">${ROLE_NAMES[f.from] || f.from}</span>
+      </div>
+      <div class="stream-summary">${escHtml(f.summary)}</div>
+    </div>
+  `).join("");
+}
+
+function renderBlockers(blockers) {
+  const wrap = document.getElementById("blockers");
+  if (!blockers.length) {
+    wrap.innerHTML = '<div class="empty-state">无卡点 ✓</div>';
+    return;
+  }
+  wrap.innerHTML = blockers.map(b => `
+    <div class="blocker-item ${b.status === 'resolved' ? 'resolved' : (b.routed_to ? 'routed' : '')}">
+      <div class="blocker-meta">
+        <span>${escHtml(b.id)} · ${ROLE_NAMES[b.from] || b.from}</span>
+        <span>${escHtml(b.status || 'open')}${b.routed_to ? ' → ' + escHtml(b.routed_to) : ''}</span>
+      </div>
+      <div>${escHtml(b.blocker)}</div>
+      ${b.needs ? `<div style="margin-top:4px;color:var(--text-dim);font-size:11px;">需要: ${escHtml(b.needs)}</div>` : ""}
+    </div>
+  `).join("");
+}
+
+function renderQuestions(questions) {
+  const wrap = document.getElementById("questions");
+  if (!questions.length) {
+    wrap.innerHTML = '<div class="empty-state">无未决问题 ✓</div>';
+    return;
+  }
+  wrap.innerHTML = questions.map(q => `
+    <div class="question-item ${q.answer ? 'replied' : ''}">
+      <div class="question-meta">
+        <span>${escHtml(q.id)} · ${ROLE_NAMES[q.from] || q.from} → ${ROLE_NAMES[q.to] || q.to}</span>
+        <span>${q.answer ? '已回复' : '待回复'}</span>
+      </div>
+      <div>${escHtml(q.question)}</div>
+      ${q.answer ? `<div style="margin-top:4px;color:var(--green);font-size:12px;">↳ ${escHtml(q.answer)}</div>` : ""}
+    </div>
+  `).join("");
+}
+
+function renderTimeline(sessionLog) {
+  const wrap = document.getElementById("timeline");
+  document.getElementById("timeline-count").textContent = sessionLog.length;
+  if (!sessionLog.length) {
+    wrap.innerHTML = '<div class="empty-state">还没有决策记录</div>';
+    return;
+  }
+  const sorted = sessionLog.slice().sort((a, b) => (b.time || "").localeCompare(a.time || ""));
+  wrap.innerHTML = sorted.map(e => `
+    <div class="timeline-item decision">
+      <div class="timeline-time">${escHtml((e.time || "").slice(11, 19))}</div>
+      <div class="timeline-decision">${escHtml(e.decision || "(无决策描述)")}</div>
+      ${e.reason ? `<div class="timeline-reason">· ${escHtml(e.reason)}</div>` : ""}
+      ${(e.related_findings && e.related_findings.length)
+        ? `<div style="margin-top:4px;">${e.related_findings.map(fid =>
+            `<span class="related-link" onclick="showFindingById('${escHtml(fid)}')">${escHtml(fid)}</span>`
+          ).join("")}</div>` : ""}
+    </div>
+  `).join("");
+}
+
+function renderStrategy(strategy) {
+  const wrap = document.getElementById("strategy");
+  if (!strategy || (typeof strategy === 'object' && !Object.keys(strategy).length)) {
+    wrap.innerHTML = '<div class="empty-state">还没有设置策略</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="strategy-box">
+      ${strategy.current_phase ? `<div class="phase">当前阶段：${escHtml(strategy.current_phase)}</div>` : ""}
+      ${strategy.priorities && strategy.priorities.length ? `
+        <div><strong>优先级：</strong><ul>${
+          strategy.priorities.map(p => `<li>${escHtml(p)}</li>`).join("")
+        }</ul></div>
+      ` : ""}
+      ${strategy.deferred && strategy.deferred.length ? `
+        <div style="margin-top:6px;"><strong>延后：</strong><ul>${
+          strategy.deferred.map(p => `<li>${escHtml(p)}</li>`).join("")
+        }</ul></div>
+      ` : ""}
+      ${strategy.notes ? `<div style="margin-top:6px;color:var(--text-dim);font-size:11px;">${escHtml(strategy.notes)}</div>` : ""}
+      ${strategy.updated ? `<div style="margin-top:6px;color:var(--text-dim);font-size:10px;">更新于 ${escHtml(strategy.updated)}</div>` : ""}
+    </div>
+  `;
+}
+
+// ─── Modal: finding detail ───
+let _findingsCache = [];
+let _answersCache = {};
+let _hubLastStartedAt = null;
+let _filterMode = "all";
+let _expandedRows = new Set();
+
+// ─── MAIN TABLE ───
+
+const CATEGORY_OF_OWNER = {
+  computer_analyst: "computer_forensics",
+  mobile_analyst:   "mobile_forensics",
+  binary_analyst:   "binary_forensics",
+  // server_analyst owns BOTH server_forensics AND internet_forensics
+};
+
+function setFilter(mode) {
+  _filterMode = mode;
+  document.querySelectorAll(".filter-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.filter === mode);
+  });
+  renderTable();
+}
+
+function toggleRow(rowId) {
+  if (_expandedRows.has(rowId)) _expandedRows.delete(rowId);
+  else _expandedRows.add(rowId);
+  renderTable();
+}
+
+async function verifyAnswer(category, qid, status, ev) {
+  if (ev) ev.stopPropagation();
+  const note = (status === "verified")
+    ? ""
+    : prompt(`请输入${status === "disputed" ? "争议" : "失败"}原因（可选）:`, "") || "";
+  if (note === null) return;
+  try {
+    const r = await fetch(`${HUB}/answers/${category}/${qid}/verify`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        verification_status: status,
+        verified_by: "main_designer",
+        verify_note: note,
+      }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+    refresh();
+  } catch (e) {
+    alert("验证失败: " + e.message);
+  }
+}
+
+function matchesFilter(answer, hasAnswer) {
+  switch (_filterMode) {
+    case "all":        return true;
+    case "answered":   return hasAnswer;
+    case "unanswered": return !hasAnswer;
+    case "verified":   return answer && answer.verification_status === "verified";
+    case "unverified": return hasAnswer && (!answer || (answer.verification_status || "unverified") === "unverified");
+    case "disputed":   return answer && answer.verification_status === "disputed";
+    default: return true;
+  }
+}
+
+function matchesSearch(qid, qtext, answer, kw) {
+  if (!kw) return true;
+  kw = kw.toLowerCase();
+  const blob = [
+    qid,
+    qtext,
+    answer?.answer || "",
+    answer?.analysis || "",
+    (answer?.evidence_path || []).join(" "),
+    answer?.evidence || "",
+  ].join(" ").toLowerCase();
+  return blob.includes(kw);
+}
+
+function vBadge(answer) {
+  if (!answer || !answer.answer) {
+    return `<span class="v-badge v-empty">—</span>`;
+  }
+  const status = answer.verification_status || "unverified";
+  const labels = {unverified: "⚠ 未验证", verified: "✓ 已验证", disputed: "× 争议", failed: "× 失败"};
+  const label = labels[status] || status;
+  return `<span class="v-badge v-${status}" title="${escHtml(answer.verified_by || "")} ${escHtml(answer.verified_at || "")} ${escHtml(answer.verify_note || "")}">${escHtml(label)}</span>`;
+}
+
+function verifyButtons(category, qid, hasAnswer) {
+  if (!hasAnswer) return "";
+  return `
+    <span class="verify-actions">
+      <button class="verify-btn ok"   onclick="verifyAnswer('${category}','${qid}','verified', event)" title="标记为已验证">✓</button>
+      <button class="verify-btn disp" onclick="verifyAnswer('${category}','${qid}','disputed', event)" title="标记为争议">?</button>
+      <button class="verify-btn fail" onclick="verifyAnswer('${category}','${qid}','failed', event)"   title="标记为失败">✗</button>
+    </span>
+  `;
+}
+
+function summaryFromFinding(answer) {
+  if (!answer) return "";
+  // 优先用 analysis 的第一行，后退 evidence finding 的 summary
+  if (answer.analysis) {
+    return answer.analysis.split("\n")[0].slice(0, 100);
+  }
+  if (answer.evidence) {
+    const f = _findingsCache.find(x => x.id === answer.evidence);
+    if (f) return (f.summary || "").slice(0, 100);
+  }
+  return "";
+}
+
+function renderTable() {
+  const tbody = document.getElementById("answer-tbody");
+  if (!tbody) return;
+  const kw = (document.getElementById("table-search")?.value || "").trim();
+
+  // 累计统计
+  let counts = {all: 0, answered: 0, unanswered: 0, verified: 0, unverified: 0, disputed: 0};
+  const rows = [];
+
+  Object.entries(QUESTIONS).forEach(([cat, meta]) => {
+    const list = (_answersCache[cat] || []);
+    const ansMap = {};
+    list.forEach(a => { if (a && a.qid) ansMap[a.qid] = a; });
+
+    meta.items.forEach(([qid, qtext]) => {
+      const a = ansMap[qid];
+      const hasAns = !!(a && a.answer);
+      const status = a?.verification_status || "unverified";
+
+      counts.all++;
+      if (hasAns) counts.answered++; else counts.unanswered++;
+      if (status === "verified") counts.verified++;
+      if (hasAns && status === "unverified") counts.unverified++;
+      if (status === "disputed") counts.disputed++;
+
+      if (!matchesFilter(a, hasAns)) return;
+      if (!matchesSearch(qid, qtext, a, kw)) return;
+
+      const rowId = `${cat}__${qid}`;
+      const expanded = _expandedRows.has(rowId);
+      const evFindingId = a?.evidence || "";
+      const evPaths = a?.evidence_path || [];
+      const evDisplay = evFindingId
+        ? `<span class="stream-id">${escHtml(evFindingId)}</span>`
+        : (evPaths.length ? `<span style="color:var(--text-dim);font-size:11px;">${evPaths.length} 个文件</span>` : `<span style="color:var(--text-dim);">—</span>`);
+
+      const ansCell = hasAns
+        ? `<span class="answer-cell has-ans copyable" title="点击复制：${escHtml(a.answer)}" onclick="copyAnswer(event, this, '${escHtml(a.answer).replace(/'/g, "\\'")}')"><span class="copy-text">${escHtml(a.answer)}</span><span class="copy-icon">📋</span></span>`
+        : `<span style="color:var(--text-dim);">—</span>`;
+
+      const summary = summaryFromFinding(a);
+      const summaryCell = summary
+        ? `<span class="summary-cell" title="${escHtml(summary)}">${escHtml(summary)}</span>`
+        : `<span style="color:var(--text-dim);">—</span>`;
+
+      rows.push(`
+        <tr class="row-main ${hasAns ? "" : "row-empty"}" onclick="toggleRow('${rowId}')">
+          <td><span class="qid-cell">${escHtml(qid)}</span> <span style="color:var(--text-dim);font-size:10px;">${escHtml(meta.title.slice(0, 4))}</span></td>
+          <td>${escHtml(qtext)}</td>
+          <td>${ansCell}</td>
+          <td>${summaryCell}</td>
+          <td>${evDisplay}</td>
+          <td>${vBadge(a)}${verifyButtons(cat, qid, hasAns)}</td>
+        </tr>
+        <tr class="row-detail ${expanded ? "show" : ""}" id="detail-${rowId}">
+          <td colspan="6">${renderRowDetail(cat, qid, qtext, a)}</td>
+        </tr>
+      `);
+    });
+  });
+
+  tbody.innerHTML = rows.join("") || `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;">没有匹配的题目</td></tr>`;
+
+  // 更新筛选计数
+  Object.entries(counts).forEach(([k, v]) => {
+    const el = document.getElementById("ft-" + k);
+    if (el) el.textContent = v;
+  });
+}
+
+function renderRowDetail(category, qid, qtext, a) {
+  if (!a) {
+    return `<div style="color:var(--text-dim);font-size:11px;">该题还未入库。需要由主设计师 POST /answers 提交（category=${escHtml(category)}, qid=${escHtml(qid)}）。</div>`;
+  }
+  const evFindings = (a.evidence ? a.evidence.split(",").map(s => s.trim()).filter(Boolean) : []);
+  const evPaths = a.evidence_path || [];
+  return `
+    <div class="detail-grid">
+      <div class="k">完整答案</div>
+      <div class="v"><pre>${escHtml(a.answer || "(未填)")}</pre></div>
+
+      <div class="k">详细解析</div>
+      <div class="v">${a.analysis ? `<pre>${escHtml(a.analysis)}</pre>` : `<span style="color:var(--text-dim);">(未填写解析——主设计师应使用 analysis 字段补充，详细到人类可复现)</span>`}</div>
+
+      <div class="k">证据 finding</div>
+      <div class="v">${evFindings.length
+        ? evFindings.map(f => `<span class="related-link" onclick="showFindingById('${escHtml(f)}')" style="display:inline-block;padding:2px 8px;margin:2px;background:var(--bg-card);border:1px solid var(--purple);border-radius:10px;color:var(--purple);cursor:pointer;font-family:monospace;font-size:11px;">${escHtml(f)}</span>`).join("")
+        : `<span style="color:var(--text-dim);">(未关联 finding ID)</span>`}</div>
+
+      <div class="k">证据路径</div>
+      <div class="v ev-path-list">${evPaths.length
+        ? evPaths.map(p => `<a href="#" onclick="copyToClipboard(event, '${escHtml(p).replace(/'/g, "\\'")}'); return false;" title="点击复制路径">${escHtml(p)}</a>`).join("")
+        : `<span style="color:var(--text-dim);">(未填写证据路径，主设计师需填 evidence_path 字段)</span>`}</div>
+
+      <div class="k">来源角色</div>
+      <div class="v">${escHtml(a.source_role || "-")} · 置信: ${escHtml(a.confidence || "-")}</div>
+
+      <div class="k">验证状态</div>
+      <div class="v">
+        ${vBadge(a)}
+        ${a.verified_by ? `<span style="margin-left:8px;font-size:11px;color:var(--text-dim);">由 ${escHtml(a.verified_by)} 于 ${escHtml(a.verified_at || "")}</span>` : ""}
+        ${a.verify_note ? `<div style="margin-top:4px;font-size:11px;color:var(--text-dim);">备注: ${escHtml(a.verify_note)}</div>` : ""}
+      </div>
+
+      <div class="k">最后更新</div>
+      <div class="v" style="font-family:monospace;font-size:11px;color:var(--text-dim);">${escHtml(a.updated || "-")}</div>
+    </div>
+  `;
+}
+
+function copyToClipboard(ev, text) {
+  ev.preventDefault(); ev.stopPropagation();
+  navigator.clipboard.writeText(text).then(
+    () => { ev.target.style.background = "rgba(63,185,80,0.3)"; setTimeout(() => ev.target.style.background = "", 600); },
+    () => alert("复制失败")
+  );
+}
+
+// B 方案: 矩阵格子点击 → 自动展开对应行 + 滚到视图
+function jumpToQuestion(cat, qid) {
+  const rowId = `${cat}__${qid}`;
+  // 自动展开
+  if (!_expandedRows.has(rowId)) {
+    _expandedRows.add(rowId);
+    renderTable();
+  }
+  // 滚动到 main row 并高亮 1 秒
+  setTimeout(() => {
+    const detailRow = document.getElementById(`detail-${rowId}`);
+    if (detailRow) {
+      const mainRow = detailRow.previousElementSibling;
+      if (mainRow) {
+        mainRow.scrollIntoView({ behavior: "smooth", block: "center" });
+        mainRow.style.transition = "background 0.5s";
+        mainRow.style.background = "rgba(88, 166, 255, 0.25)";
+        setTimeout(() => { mainRow.style.background = ""; }, 1500);
+      }
+    }
+  }, 50);
+}
+
+// B 方案: 点答案直接复制（阻止行展开）
+function copyAnswer(ev, el, text) {
+  ev.preventDefault(); ev.stopPropagation();
+  navigator.clipboard.writeText(text).then(
+    () => {
+      const orig = el.querySelector(".copy-icon").textContent;
+      el.querySelector(".copy-icon").textContent = "✓";
+      el.classList.add("copied");
+      setTimeout(() => {
+        el.querySelector(".copy-icon").textContent = orig;
+        el.classList.remove("copied");
+      }, 1200);
+    },
+    () => alert("复制失败 (可能浏览器没授权剪贴板)")
+  );
+}
+
+// ─── Hub uptime / restart detection ───
+let _lastFindingId = null;
+function flashRoleCard(role) {
+  // delay until DOM updates
+  setTimeout(() => {
+    const cards = document.querySelectorAll(".role-card");
+    // role cards 里按 ROLE_NAMES 顺序：computer mobile server binary
+    const order = ["computer_analyst", "mobile_analyst", "server_analyst", "binary_analyst"];
+    const idx = order.indexOf(role);
+    if (idx >= 0 && cards[idx]) {
+      cards[idx].classList.remove("flash");
+      void cards[idx].offsetWidth;  // force reflow
+      cards[idx].classList.add("flash");
+    }
+  }, 50);
+}
+
+function updateHubInfo(ping) {
+  if (!ping) return;
+  const startedAt = ping.started_at;
+  if (_hubLastStartedAt && startedAt && startedAt !== _hubLastStartedAt) {
+    document.getElementById("hub-restart-time").textContent = startedAt;
+    document.getElementById("hub-restart-banner").classList.add("show");
+    setTimeout(() => document.getElementById("hub-restart-banner").classList.remove("show"), 12000);
+  }
+  _hubLastStartedAt = startedAt || _hubLastStartedAt;
+  if (startedAt) {
+    const t = new Date(startedAt.replace(" ", "T"));
+    const diff = (Date.now() - t.getTime()) / 1000;
+    let uptime;
+    if (diff < 60) uptime = `${Math.floor(diff)}s`;
+    else if (diff < 3600) uptime = `${Math.floor(diff / 60)}m`;
+    else if (diff < 86400) uptime = `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
+    else uptime = `${Math.floor(diff / 86400)}d`;
+    document.getElementById("hub-uptime").textContent = `Hub uptime: ${uptime}`;
+  }
+}
+
+function showFinding(f) {
+  if (!f) return;
+  document.getElementById("modal-title").textContent = `${f.id} · ${ROLE_NAMES[f.from] || f.from}`;
+  const body = document.getElementById("modal-body");
+  const related = (f.related_to || []);
+  body.innerHTML = `
+    <div class="field">
+      <div class="field-label">时间 / 类型</div>
+      <div class="field-value">${escHtml(f.time || "")} · ${escHtml(f.type || "evidence")}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">摘要</div>
+      <div class="field-value">${escHtml(f.summary || "")}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">完整详情</div>
+      <div class="field-value">${escHtml(f.detail || "(无额外详情)")}</div>
+    </div>
+    ${related.length ? `
+      <div class="field">
+        <div class="field-label">关联 (related_to)</div>
+        <div>${related.map(r => `<span class="related-link" onclick="showFindingById('${escHtml(r)}')">${escHtml(r)}</span>`).join("")}</div>
+      </div>
+    ` : ""}
+  `;
+  document.getElementById("modal").classList.add("show");
+}
+
+function showFindingById(id) {
+  const f = _findingsCache.find(x => x.id === id);
+  if (f) showFinding(f);
+}
+
+function closeModal(e) {
+  if (e && e.target.id !== "modal") return;
+  document.getElementById("modal").classList.remove("show");
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ─── Main refresh ───
+async function refresh() {
+  try {
+    const [ping, progress, findings, answers, session, questions] = await Promise.all([
+      fetchJson(`${HUB}/ping`),
+      fetchJson(`${HUB}/progress`),
+      fetchJson(`${HUB}/findings`),
+      fetchJson(`${HUB}/answers`),
+      fetchJson(`${HUB}/session`),
+      fetchJson(`${HUB}/questions`),
+    ]);
+
+    _findingsCache = findings || [];
+    _answersCache = answers || {};
+
+    // detect new finding → flash that role's card
+    const sortedFindings = (findings || []).slice().sort((a, b) => (b.time || "").localeCompare(a.time || ""));
+    if (sortedFindings.length && _lastFindingId && sortedFindings[0].id !== _lastFindingId) {
+      flashRoleCard(sortedFindings[0].from);
+    }
+    if (sortedFindings.length) _lastFindingId = sortedFindings[0].id;
+
+    updateHubInfo(ping);
+    renderTotal(answers || {});
+    renderRoles(progress || {}, findings || []);
+    renderMatrix(answers || {}, findings || []);
+    renderTable();
+    renderStream(findings || []);
+    renderBlockers(session?.blockers || []);
+    renderQuestions(questions || []);
+    renderTimeline(session?.session_log || []);
+    renderStrategy(session?.strategy || {});
+
+    document.getElementById("issues-count").textContent =
+      ((session?.blockers || []).filter(b => b.status !== 'resolved').length) +
+      ((questions || []).filter(q => !q.answer).length);
+
+    document.getElementById("hub-status").textContent = "● Hub 已连接 " + (ping?.version || "");
+    document.getElementById("hub-status").style.color = "var(--green)";
+    document.getElementById("last-update").textContent = "上次刷新：" + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById("hub-status").textContent = "● Hub 不可达 (" + e.message + ")";
+    document.getElementById("hub-status").style.color = "var(--red)";
+  }
+}
+
+function toggleAuto() {
+  autoRefreshOn = !autoRefreshOn;
+  const btn = document.getElementById("toggle-auto");
+  if (autoRefreshOn) {
+    btn.textContent = "自动刷新 5s ●";
+    btn.classList.add("on");
+    timer = setInterval(refresh, REFRESH_MS);
+  } else {
+    btn.textContent = "自动刷新 已停 ○";
+    btn.classList.remove("on");
+    clearInterval(timer);
+  }
+}
+
+// 启动
+refresh();
+timer = setInterval(refresh, REFRESH_MS);
+</script>
+
+</body>
+</html>
