@@ -481,11 +481,39 @@ def watcher_loop(hub: str, case_dir: str, interval: int):
     """后台监视循环: 拉态势 + 自动 routing + 写 brief"""
     brief_path = Path(case_dir) / "shared" / "captain_brief.md"
     events_path = Path(case_dir) / "shared" / "captain_events.jsonl"
+    state_path = Path(case_dir) / "shared" / "captain_state.json"
     brief_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"[watcher] 启动. brief={brief_path}, interval={interval}s")
-    prev_answers = {}
-    routing_events = []  # 内存缓存
+
+    # 路由触发去重: 记录已触发过的 (cat, qid) 组合, 持久化避免重启重复广播
+    triggered_keys = set()
+    if state_path.exists():
+        try:
+            saved = json.loads(state_path.read_text(encoding="utf-8"))
+            triggered_keys = set(saved.get("triggered_keys", []))
+            print(f"[watcher] 已加载历史触发记录: {len(triggered_keys)} 个 key")
+        except Exception:
+            pass
+
+    # 启动基线: 把当前所有已答的 key 直接计入 triggered_keys, 避免首次循环全量误触发
+    try:
+        baseline = snapshot(hub, case_dir=case_dir)
+        baseline_answers = baseline.get("answers", {})
+        if isinstance(baseline_answers, dict):
+            for cat, items in baseline_answers.items():
+                if not isinstance(items, list):
+                    continue
+                for a in items:
+                    if isinstance(a, dict) and a.get("answer"):
+                        triggered_keys.add(f"{cat}/{a.get('qid')}")
+        prev_answers = baseline_answers
+        print(f"[watcher] 已建立基线 (跳过 {len(triggered_keys)} 个现有答案的 routing)")
+    except Exception as e:
+        print(f"[watcher] 基线建立失败: {e}")
+        prev_answers = {}
+
+    routing_events = []
 
     cycle = 0
     while True:
@@ -497,24 +525,26 @@ def watcher_loop(hub: str, case_dir: str, interval: int):
             # 检测新答案 + 触发路由
             changes = detect_new_answers(prev_answers, curr_answers)
             for cat, qid, ans in changes:
+                key = f"{cat}/{qid}"
+                # 去重: 已触发过的 key 跳过
+                if key in triggered_keys:
+                    continue
                 # 找匹配规则
                 for rule in ROUTING_RULES:
                     if rule["trigger_cat"] == cat and rule["trigger_qid"] == qid:
-                        print(f"[watcher] 触发路由: {cat}/{qid} -> {rule['broadcast_to']}")
-                        # 1. POST 一条 broadcast finding
+                        print(f"[watcher] 触发路由: {key} -> {rule['broadcast_to']}")
                         broadcast = {
                             "from": "main_designer",
                             "type": "instruction",
                             "summary": f"[CAPTAIN AUTO] {rule['summary']}",
-                            "detail": f"触发: {cat}/{qid} = {ans}\n目标角色: {','.join(rule['broadcast_to'])}",
+                            "detail": f"触发: {key} = {ans}\n目标角色: {','.join(rule['broadcast_to'])}",
                             "target_roles": rule["broadcast_to"],
                         }
-                        r = post_to_hub(hub, "/findings", broadcast)
-                        # 2. 记录到 events
+                        post_to_hub(hub, "/findings", broadcast)
                         evt = {
                             "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "type": "auto_route",
-                            "trigger": f"{cat}/{qid}",
+                            "trigger": key,
                             "to": ",".join(rule["broadcast_to"]),
                             "summary": rule["summary"],
                         }
@@ -524,6 +554,15 @@ def watcher_loop(hub: str, case_dir: str, interval: int):
                                 fh.write(json.dumps(evt, ensure_ascii=False) + "\n")
                         except Exception:
                             pass
+                # 标记此 key 已处理 (即使没匹配规则)
+                triggered_keys.add(key)
+                # 持久化
+                try:
+                    state_path.write_text(
+                        json.dumps({"triggered_keys": sorted(triggered_keys)}, ensure_ascii=False, indent=2),
+                        encoding="utf-8")
+                except Exception:
+                    pass
 
             # 检测 stalled
             stalled = detect_stalled(state, threshold_min=30)
