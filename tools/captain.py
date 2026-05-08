@@ -20,10 +20,12 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
-DEFAULT_HUB = "http://127.0.0.1:8765"
+DEFAULT_HUB  = "http://127.0.0.1:8765"
+DEFAULT_CASE = r"E:\ffffff-JIANCAI\2026FIC团体赛\case"
 ROLES = ["computer_analyst", "mobile_analyst", "server_analyst", "binary_analyst"]
 CATEGORIES = {
     "computer_forensics": "计算机",
@@ -74,12 +76,25 @@ def alive_emoji(t_str, now):
         return "❓"
 
 
-def snapshot(hub, since=None):
+def _try_lint(case_dir: str) -> list[dict]:
+    """尝试调 answer_format_lint.quick_lint, 失败静默返回空。"""
+    try:
+        tools_dir = Path(__file__).parent
+        sys.path.insert(0, str(tools_dir))
+        from answer_format_lint import quick_lint  # type: ignore
+        fails, _ = quick_lint(case_dir)
+        return fails
+    except Exception as e:
+        return [{"_err": str(e)}]
+
+
+def snapshot(hub, since=None, case_dir=DEFAULT_CASE):
     """一次拉取全局态势, 返回 dict (json 模式直接 dump)。"""
     now = datetime.datetime.now()
     state = {
         "captain": "小空",
         "hub": hub,
+        "case_dir": case_dir,
         "snap_at": now.strftime("%Y-%m-%d %H:%M:%S"),
         "ping": get(hub, "/ping"),
         "progress": get(hub, "/progress"),
@@ -175,6 +190,9 @@ def snapshot(hub, since=None):
             })
     state["open_blockers"] = blockers
 
+    # 5b. 答案格式 lint (C3)
+    state["lint_fails"] = _try_lint(case_dir)
+
     return state
 
 
@@ -268,6 +286,20 @@ def render_human(state):
             mark = "⚠️" if f.get("encoding_lost") else " "
             lines.append(f"  {mark} [{f['id']}] {f['from']:18s} {f['age']:10s}: {f['summary']}")
 
+    # 格式 lint (C3)
+    lint_fails = state.get("lint_fails", [])
+    real_fails = [f for f in lint_fails if "_err" not in f]
+    if real_fails:
+        lines.append("")
+        lines.append("=" * 70)
+        lines.append("【格式 Lint — 疑似答案格式错误】(C3)")
+        lines.append("=" * 70)
+        for f in real_fails[:10]:
+            lines.append(
+                f"  ❌ [{f['cat'][:20]:20s}] {f['qid']:4s}: {(f['answer'] or '')[:40]}"
+            )
+            lines.append(f"     期望: {f.get('ref_format','')}  ({f.get('reason','')})")
+
     # 战略提示 (captain 该干的事)
     lines.append("")
     lines.append("=" * 70)
@@ -275,6 +307,9 @@ def render_human(state):
     lines.append("=" * 70)
 
     suggestions = []
+    # 格式 lint 失败
+    if real_fails:
+        suggestions.append(f"  • {len(real_fails)} 个答案格式疑似不符 — 跑 python tools/answer_format_lint.py --fix 自动标 disputed")
     # 长时间心跳缺失
     for h in state["heartbeat"]:
         if h["alive"] in ("🔴", "🟠"):
@@ -302,14 +337,18 @@ def render_human(state):
 
 def main():
     p = argparse.ArgumentParser(description="Captain Console — 小空主动态势板")
-    p.add_argument("--hub", default=DEFAULT_HUB, help="Hub URL")
-    p.add_argument("--json", action="store_true", help="JSON 输出")
-    p.add_argument("--watch", type=int, default=0, help="N 秒刷新 (0 = 只输出一次)")
+    p.add_argument("--hub",   default=DEFAULT_HUB,  help="Hub URL")
+    p.add_argument("--case",  default=DEFAULT_CASE, help="case 目录 (用于格式 lint)")
+    p.add_argument("--json",  action="store_true",  help="JSON 输出")
+    p.add_argument("--watch", type=int, default=0,  help="N 秒刷新 (0 = 只输出一次)")
     p.add_argument("--since", help="只看 ISO timestamp 之后的活动 (例: 2026-05-08T14)")
+    p.add_argument("--no-lint", action="store_true", help="跳过格式 lint (加快速度)")
     args = p.parse_args()
 
     while True:
-        state = snapshot(args.hub, since=args.since)
+        state = snapshot(args.hub, since=args.since, case_dir=args.case)
+        if args.no_lint:
+            state["lint_fails"] = []
         if args.json:
             print(json.dumps(state, ensure_ascii=False, indent=2))
         else:
