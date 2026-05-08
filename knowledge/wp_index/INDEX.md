@@ -10,6 +10,7 @@
 
 | 文件 | 比赛 | 题数 | 原文 WP |
 |---|---|---|---|
+| `FIC-2026初赛.md` | 2026 FIC 初赛 | ~10 (computer 已收录, 其余待补) | [玫幽倩 blog](https://mei-you-qian.github.io/2026/05/07/2026FIC%E5%88%9D%E8%B5%9B/) |
 | `FIC-2025决赛.md` | 2025 FIC 决赛 | ~60 | [WXjzc cnblogs](https://www.cnblogs.com/WXjzc/p/18901128) |
 | `FIC-2025初赛.md` | 2025 FIC 初赛 | ~50 | [玫幽倩 blog](https://mei-you-qian.github.io/2025/10/28/2025fic初赛复盘/) |
 | `FIC-2024决赛.md` | 2024 FIC 决赛 | ~70 | [玫幽倩 blog](https://mei-you-qian.github.io/2026/01/22/2024FIC%E5%86%B3%E8%B5%9B/) |

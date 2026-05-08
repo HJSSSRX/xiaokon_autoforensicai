@@ -16,9 +16,21 @@
 | 文件 | 用途 | 建议归属 |
 |---|---|---|
 | [`POSTMORTEM_computer_v1.md`](./POSTMORTEM_computer_v1.md) | 案件特化的逐题复盘 + 错因 + 优化方案 | 留在 `cases/2026FIC/` |
-| [`TRIAGE_DSL_v1.md`](./TRIAGE_DSL_v1.md) | **通用**检材筛选 DSL（让低性能 AI 用极少 token 完成 triage） | 建议提级到 `knowledge/skills/` |
+| [`TRIAGE_DSL_v1.md`](./TRIAGE_DSL_v1.md) | 检材筛选 DSL（**已提级**到 `@/knowledge/skills/TRIAGE_DSL_v1.md`） | 本副本仅作历史快照 |
 | [`PROPOSAL_local_collab_tuning_v1.md`](./PROPOSAL_local_collab_tuning_v1.md) | **本机端远程协作 5 项微调提案**（含决策表） | 决策后视情况并入 `COLLABORATION_GUIDE.md` |
 | [`answers_final_legacy.md`](./answers_final_legacy.md) | 旧答案表（保留作反面教材，不删） | 留在本目录 |
+
+### 已提级到 framework 的资产（2026-05-08 第二轮）
+
+| 路径 | 用途 |
+|---|---|
+| `@/knowledge/skills/TRIAGE_DSL_v1.md` | 检材筛选 DSL（提级自本目录） |
+| `@/knowledge/skills/must_scan_dirs.md` | OS×角色 必扫目录矩阵（11 节） |
+| `@/knowledge/skills/stego_host_atlas.md` | 隐写宿主全景（10 类宿主 + 触发关键词） |
+| `@/knowledge/skills/weak_crypto_kit.md` | 弱密钥/弱口令套件（RSA Fermat/Wiener/factordb + AES + hash + 30%复用法则） |
+| `@/knowledge/skills/format_cookbook.md` | 取证文件格式速查（OLE / OOXML / ELF / PE / SQLite / leveldb / mp4 / E01 等） |
+| `@/knowledge/skills/forensic_antipatterns.md` | 12 条反模式（AP-001~AP-012，每条含症状/根因/解药） |
+| `@/knowledge/wp_index/FIC-2026初赛.md` | 题库索引（对齐 INDEX.md schema：10 题计算机已收录，其他角色待补） |
 
 ---
 
