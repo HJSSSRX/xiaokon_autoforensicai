@@ -653,22 +653,23 @@ function renderMatrix(answers, findings) {
     }
     let solved = 0;
     const cells = [];
-    for (let i = 1; i <= meta.count; i++) {
-      const qid = "Q" + i;
+    const total = meta.items.length;
+    meta.items.forEach(([qid, qtext], idx) => {
       const a = ansMap[qid];
       const hasAns = a && a.answer;
       if (hasAns) solved++;
+      const num = idx + 1;
       const tooltip = a
         ? `${qid}: ${escHtml(a.answer || "—")}\n证据: ${escHtml(a.evidence || "")}\n(点击跳到该题详情)`
-        : `${qid}: 未答（点击跳到该题）`;
-      cells.push(`<div class="cell ${hasAns ? "solved" : "empty"}" title="${tooltip}" onclick="jumpToQuestion('${cat}', '${qid}')" style="cursor:pointer;">${i}</div>`);
-    }
-    const pct = meta.count ? Math.round(solved * 100 / meta.count) : 0;
+        : `${qid}: ${escHtml(qtext.slice(0, 40))}\n(未答、点击跳到该题)`;
+      cells.push(`<div class="cell ${hasAns ? "solved" : "empty"}" title="${tooltip}" onclick="jumpToQuestion('${cat}', '${qid}')" style="cursor:pointer;">${num}</div>`);
+    });
+    const pct = total ? Math.round(solved * 100 / total) : 0;
     return `
       <div class="matrix-row">
         <div class="matrix-label">${meta.title}</div>
         <div class="matrix-cells">${cells.join("")}</div>
-        <div class="matrix-summary">${solved}/${meta.count} (${pct}%)</div>
+        <div class="matrix-summary">${solved}/${total} (${pct}%)</div>
       </div>
     `;
   }).join("");
@@ -677,7 +678,7 @@ function renderMatrix(answers, findings) {
 function renderTotal(answers) {
   let total = 0, done = 0;
   for (const [cat, meta] of Object.entries(QUESTIONS)) {
-    total += meta.count;
+    total += meta.items.length;
     const list = answers[cat] || [];
     for (const a of list) if (a && a.answer) done++;
   }
