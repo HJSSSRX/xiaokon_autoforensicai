@@ -13,6 +13,7 @@ answer_format_lint.py — C3 方案: 答案格式校验工具
   python tools/answer_format_lint.py --fix                       # 自动标 disputed (需 Hub 在线)
   python tools/answer_format_lint.py --json                      # JSON 输出
 """
+from __future__ import annotations
 import argparse
 import io
 import json
@@ -22,8 +23,6 @@ import urllib.request
 from pathlib import Path
 
 import yaml
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 # ─── 内置格式规则库 ───────────────────────────────────────────────────────────
 # 格式: name -> (regex_pattern, description, example)
@@ -35,7 +34,7 @@ FORMAT_RULES = {
     "sha256":   (r"^[0-9a-f]{64}$",   "SHA256 (64 hex lowercase)", "e3b0c44298fc1c149afbf4c8996fb924"),
     "sm3":      (r"^[0-9A-Fa-f]{64}$","SM3 (64 hex, 大小写均可)", "09D001DAC..."),
     # 网络
-    "ip":       (r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", "IPv4 地址", "1.1.1.1"),
+    "ip":       (r"^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$", "IPv4 地址", "1.1.1.1"),
     "port":     (r"^\d{1,5}$",        "端口号 (纯数字 1-65535)", "443"),
     "url_http": (r"^https?://",        "URL (http/https 开头)", "http://a.b.c/d"),
     "domain_port": (r"^[\w.-]+:\d+$", "域名:端口", "a.b.c:80"),
@@ -232,6 +231,8 @@ def mark_disputed_via_hub(fails: list[dict], hub: str) -> None:
 
 
 def main():
+    if hasattr(sys.stdout, "buffer"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
     p = argparse.ArgumentParser(description="答案格式 Lint 工具 (C3 方案)")
     p.add_argument("--case",   default=r"E:\ffffff-JIANCAI\2026FIC团体赛\case", help="case 目录")
     p.add_argument("--cat",    default=None,  help="只扫某个 category")
