@@ -37,6 +37,22 @@
 3. case\shared\diff_report.md
 4. E:\项目\自动化取证\knowledge\skills\mobile\quick_reference.md
 
+━━━ 心跳协议（v2 闭环必须遵守） ━━━
+主指挥 (captain/main_designer) 通过 watcher 主动向你发广播指令。
+你必须:
+1. 每完成一个步骤, 立即 POST /findings 汇报
+2. 每完成一题, POST /answers 后立即 GET http://[HUB_IP]:8765/findings?from=main_designer
+3. 看到 type="instruction" 且 target_roles 包含 "mobile_analyst" 的 finding, 优先处理
+4. 超过 30 分钟无进展时, POST heartbeat finding 证明你活着
+
+```python
+import urllib.request, json
+r = urllib.request.urlopen("http://[HUB_IP]:8765/findings?from=main_designer", timeout=3)
+for inst in [f for f in json.loads(r.read()) if f.get("type")=="instruction"][-5:]:
+    if "mobile_analyst" in inst.get("target_roles", []):
+        print(f"[指挥] {inst['summary']}")
+```
+
 ━━━ 5 题修复方案 ━━━
 
 【Q1: 手机型号 — 重做】

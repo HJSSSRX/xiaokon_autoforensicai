@@ -75,7 +75,7 @@ ROLE_TO_CATEGORY = {
 # Allows: role_prompt_*.md, shared/*.yaml, and any TOP-LEVEL ALL-CAPS .md docs
 # (deployment guides, handoff notes, etc.) but NOT arbitrary user files.
 FILE_WHITELIST = re.compile(
-    r"^(role_prompt_\w+\.md|shared/[\w_-]+\.yaml|[A-Z][A-Z0-9_]+\.md|README\.md|import_[\w_]+\.py)$"
+    r"^(role_prompt_\w+\.md|shared/[\w_-]+\.(yaml|md|jsonl)|[A-Z][A-Z0-9_]+\.md|README\.md|import_[\w_]+\.py)$"
 )
 
 _lock = threading.Lock()

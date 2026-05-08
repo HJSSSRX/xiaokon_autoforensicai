@@ -39,6 +39,22 @@
 [互联网] Q1 Telegram 群组 = FIC_2026
         Q3 ngrok = blemish-junior-unengaged.ngrok-free.dev
 
+━━━ 心跳协议（v2 闭环必须遵守） ━━━
+主指挥 (captain/main_designer) 通过 watcher 主动向你发广播指令。
+你必须:
+1. 每完成一个步骤, 立即 POST /findings 汇报
+2. 每完成一题, POST /answers 后立即 GET http://[HUB_IP]:8765/findings?from=main_designer
+3. 看到 type="instruction" 且 target_roles 包含 "computer_analyst" 的 finding, 优先处理
+4. 超过 30 分钟无进展时, POST heartbeat finding 证明你活着
+
+```python
+import urllib.request, json
+r = urllib.request.urlopen("http://[HUB_IP]:8765/findings?from=main_designer", timeout=3)
+for inst in [f for f in json.loads(r.read()) if f.get("type")=="instruction"][-5:]:
+    if "computer_analyst" in inst.get("target_roles", []):
+        print(f"[指挥] {inst['summary']}")
+```
+
 ━━━ 你今天的 4 步行动（按依赖顺序） ━━━
 
 【Step 1: 复盘 Q4 (apk 下载链接)】
