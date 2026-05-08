@@ -17,6 +17,7 @@
 |---|---|---|
 | [`POSTMORTEM_computer_v1.md`](./POSTMORTEM_computer_v1.md) | 案件特化的逐题复盘 + 错因 + 优化方案 | 留在 `cases/2026FIC/` |
 | [`TRIAGE_DSL_v1.md`](./TRIAGE_DSL_v1.md) | **通用**检材筛选 DSL（让低性能 AI 用极少 token 完成 triage） | 建议提级到 `knowledge/skills/` |
+| [`PROPOSAL_local_collab_tuning_v1.md`](./PROPOSAL_local_collab_tuning_v1.md) | **本机端远程协作 5 项微调提案**（含决策表） | 决策后视情况并入 `COLLABORATION_GUIDE.md` |
 | [`answers_final_legacy.md`](./answers_final_legacy.md) | 旧答案表（保留作反面教材，不删） | 留在本目录 |
 
 ---
