@@ -116,15 +116,36 @@ Required structure:
 **第一步**: {具体可执行的命令}
 ```
 
-The prompt MUST include:
+### Role Prompt 模板 v4 (2026-05-08, A 方案主被动反转)
 
-1. **Action directive** — "立即执行" header + "不要提问" instruction
-2. **Concrete first step** — a copy-pastable command the AI can run immediately
-3. **All assigned questions** — full text with answer format requirements
-4. Evidence paths, working directory, case background
-5. Available tools (CLI commands with full paths, not MCP)
-6. Knowledge base search instructions
-7. Collaboration protocol (how to use shared/ directory)
+**关键变化**: 协作部分从 78 行压到 13 行；知识库提到顶部强制查；用 `tools/role_log.py` 替代手写 PowerShell `Invoke-RestMethod`。
+
+**生成 role prompt 时, 必须按 v4 模板的 7 段结构**:
+
+1. **强制开题动作 (60-90 秒)** — 必填
+   - 指明该角色的 `knowledge/skills/<dir>/*.md` 路径
+   - 强制让角色开题前回答 3 个问题 (答案格式 / 知识库匹配 / 第一步看哪)
+   - 不写出 3 个答案不准动手
+2. **案件背景** — 简短一段
+3. **题目表** — Markdown 表格 (#/题面/答案格式)，"答案格式"是最强约束 ⚠️
+4. **协作 — 1 个函数搞定 (≤ 15 行代码示例)** — 必填
+   - 用 `import role_log; from role_log import log_answer, log_finding, log_blocker, log_question`
+   - 显式列禁止行为: 不要 PowerShell ConvertTo-Json / Invoke-RestMethod / 每题 4 次 POST
+5. **可用工具** — CLI 速查 + 关键路径
+6. **分析顺序** — 表格化 (顺序/操作/题号), 含**经验铁律** (如复盘里的错因)
+7. **开始** — 第一个具体动作命令
+
+**禁止**:
+- ❌ 把协作协议写成 78 行 (v3 的错误)
+- ❌ 让角色手写 PowerShell `Invoke-RestMethod` + `ConvertTo-Json`
+- ❌ 强制每题 POST 4 次 (findings + progress + blocker + answer)
+- ❌ 用 "如可访问" 这种弱化措辞引用知识库 (要强制)
+
+**参考实现 (拷贝改造即可)**:
+- `case/role_prompt_computer_v4.md`
+- `case/role_prompt_mobile_v4.md`
+- `case/role_prompt_server_v4.md`
+- `case/role_prompt_binary_v4.md`
 
 **生成完成后，必须向用户输出所有 prompt 文件的完整绝对路径列表，方便用户复制粘贴到新窗口。**
 

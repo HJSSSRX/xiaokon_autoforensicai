@@ -287,6 +287,26 @@
   .qid-cell { font-family: monospace; font-weight: 600; color: var(--accent); white-space: nowrap; }
   .answer-cell { font-family: monospace; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .answer-cell.has-ans { color: var(--green); }
+  .answer-cell.copyable {
+    cursor: pointer; padding: 3px 8px; border-radius: 4px;
+    border: 1px solid transparent; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .answer-cell.copyable:hover {
+    background: rgba(63, 185, 80, 0.12);
+    border-color: rgba(63, 185, 80, 0.4);
+  }
+  .answer-cell.copyable .copy-icon { font-size: 11px; opacity: 0.5; transition: opacity 0.15s; }
+  .answer-cell.copyable:hover .copy-icon { opacity: 1; }
+  .answer-cell.copyable.copied {
+    background: rgba(63, 185, 80, 0.3) !important;
+    border-color: var(--green) !important;
+  }
+  .answer-cell.copyable.copied .copy-icon { color: var(--green); opacity: 1; }
+  .answer-cell.copyable .copy-text {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 200px; display: inline-block;
+  }
   .summary-cell { color: var(--text-dim); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .v-badge {
@@ -396,18 +416,15 @@
   </table>
 </div>
 
-<details style="margin-bottom:16px;">
-  <summary style="cursor:pointer;color:var(--text-dim);font-size:12px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;">题目矩阵视图（点击展开）</summary>
-  <div class="matrix-section" style="margin-top:8px;">
-    <div class="panel">
-      <div class="panel-header">
-        <h2>题目矩阵</h2>
-        <span class="count">绿=已答 / 灰=未答</span>
-      </div>
-      <div id="matrix" class="matrix"></div>
+<div class="matrix-section" style="margin-bottom:16px;">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>题目矩阵 <span style="font-size:11px;color:var(--text-dim);font-weight:normal;">（点击格子跳到详情）</span></h2>
+      <span class="count">绿=已答 / 灰=未答</span>
     </div>
+    <div id="matrix" class="matrix"></div>
   </div>
-</details>
+</div>
 
 <div class="grid-2">
   <div class="panel">
@@ -642,9 +659,9 @@ function renderMatrix(answers, findings) {
       const hasAns = a && a.answer;
       if (hasAns) solved++;
       const tooltip = a
-        ? `${qid}: ${escHtml(a.answer || "—")}\n证据: ${escHtml(a.evidence || "")}`
-        : `${qid}: 未答`;
-      cells.push(`<div class="cell ${hasAns ? "solved" : "empty"}" title="${tooltip}">${i}</div>`);
+        ? `${qid}: ${escHtml(a.answer || "—")}\n证据: ${escHtml(a.evidence || "")}\n(点击跳到该题详情)`
+        : `${qid}: 未答（点击跳到该题）`;
+      cells.push(`<div class="cell ${hasAns ? "solved" : "empty"}" title="${tooltip}" onclick="jumpToQuestion('${cat}', '${qid}')" style="cursor:pointer;">${i}</div>`);
     }
     const pct = meta.count ? Math.round(solved * 100 / meta.count) : 0;
     return `
@@ -921,7 +938,7 @@ function renderTable() {
         : (evPaths.length ? `<span style="color:var(--text-dim);font-size:11px;">${evPaths.length} 个文件</span>` : `<span style="color:var(--text-dim);">—</span>`);
 
       const ansCell = hasAns
-        ? `<span class="answer-cell has-ans" title="${escHtml(a.answer)}">${escHtml(a.answer)}</span>`
+        ? `<span class="answer-cell has-ans copyable" title="点击复制：${escHtml(a.answer)}" onclick="copyAnswer(event, this, '${escHtml(a.answer).replace(/'/g, "\\'")}')"><span class="copy-text">${escHtml(a.answer)}</span><span class="copy-icon">📋</span></span>`
         : `<span style="color:var(--text-dim);">—</span>`;
 
       const summary = summaryFromFinding(a);
@@ -999,6 +1016,46 @@ function copyToClipboard(ev, text) {
   navigator.clipboard.writeText(text).then(
     () => { ev.target.style.background = "rgba(63,185,80,0.3)"; setTimeout(() => ev.target.style.background = "", 600); },
     () => alert("复制失败")
+  );
+}
+
+// B 方案: 矩阵格子点击 → 自动展开对应行 + 滚到视图
+function jumpToQuestion(cat, qid) {
+  const rowId = `${cat}__${qid}`;
+  // 自动展开
+  if (!_expandedRows.has(rowId)) {
+    _expandedRows.add(rowId);
+    renderTable();
+  }
+  // 滚动到 main row 并高亮 1 秒
+  setTimeout(() => {
+    const detailRow = document.getElementById(`detail-${rowId}`);
+    if (detailRow) {
+      const mainRow = detailRow.previousElementSibling;
+      if (mainRow) {
+        mainRow.scrollIntoView({ behavior: "smooth", block: "center" });
+        mainRow.style.transition = "background 0.5s";
+        mainRow.style.background = "rgba(88, 166, 255, 0.25)";
+        setTimeout(() => { mainRow.style.background = ""; }, 1500);
+      }
+    }
+  }, 50);
+}
+
+// B 方案: 点答案直接复制（阻止行展开）
+function copyAnswer(ev, el, text) {
+  ev.preventDefault(); ev.stopPropagation();
+  navigator.clipboard.writeText(text).then(
+    () => {
+      const orig = el.querySelector(".copy-icon").textContent;
+      el.querySelector(".copy-icon").textContent = "✓";
+      el.classList.add("copied");
+      setTimeout(() => {
+        el.querySelector(".copy-icon").textContent = orig;
+        el.classList.remove("copied");
+      }, 1200);
+    },
+    () => alert("复制失败 (可能浏览器没授权剪贴板)")
   );
 }
 

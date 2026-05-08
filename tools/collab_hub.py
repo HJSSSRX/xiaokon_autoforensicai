@@ -62,6 +62,15 @@ ROLE_PREFIX = {
     "main_designer": "D",
 }
 
+# A 方案: role -> answer category 自动推断 (用于 /log 智能分流)
+ROLE_TO_CATEGORY = {
+    "computer_analyst": "computer_forensics",
+    "mobile_analyst": "mobile_forensics",
+    "server_analyst": "server_forensics",
+    "binary_analyst": "binary_forensics",
+    "internet_analyst": "internet_forensics",
+}
+
 # Whitelist for /files/ to prevent path traversal
 # Allows: role_prompt_*.md, shared/*.yaml, and any TOP-LEVEL ALL-CAPS .md docs
 # (deployment guides, handoff notes, etc.) but NOT arbitrary user files.
@@ -274,6 +283,73 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._dispatch_post(path, body)
 
     def _dispatch_post(self, path, body):
+        # ─── A 方案: POST /log — 极简协作端点 ───
+        # 远程角色只用一个端点。Hub 根据 kind 自动分流。
+        # Body: {kind: answer|finding|blocker|question|progress, from: <role>, ...}
+        if path == "/log":
+            kind = (body.get("kind") or "").strip().lower()
+            role = (body.get("from") or "").strip()
+            if not kind or not role:
+                return self._err(400, "Missing 'kind' or 'from' field")
+
+            if kind == "answer":
+                # 自动从 role 推断 category（除非显式指定）
+                category = body.get("category") or ROLE_TO_CATEGORY.get(role, "")
+                if not category:
+                    return self._err(400, f"Cannot infer category from role '{role}'; pass 'category' explicitly")
+                forwarded = {
+                    "category": category,
+                    "qid": body.get("qid", ""),
+                    "question": body.get("question", ""),
+                    "answer": body.get("answer", ""),
+                    "confidence": body.get("confidence", "medium"),
+                    "source_role": role,
+                    "evidence": body.get("evidence", ""),
+                    "analysis": body.get("analysis", ""),
+                    "evidence_path": body.get("evidence_path", []),
+                }
+                return self._dispatch_post("/answers", forwarded)
+
+            if kind == "finding":
+                forwarded = {
+                    "from": role,
+                    "type": body.get("type", "evidence"),
+                    "summary": body.get("summary", ""),
+                    "detail": body.get("detail", ""),
+                    "related_to": body.get("related_to", []),
+                }
+                return self._dispatch_post("/findings", forwarded)
+
+            if kind == "blocker":
+                forwarded = {
+                    "from": role,
+                    "blocker": body.get("blocker", ""),
+                    "needs": body.get("needs", ""),
+                    "routed_to": body.get("routed_to", ""),
+                }
+                return self._dispatch_post("/session/blocker", forwarded)
+
+            if kind == "question":
+                forwarded = {
+                    "from": role,
+                    "to": body.get("to", "main_designer"),
+                    "question": body.get("question", ""),
+                    "context": body.get("context", ""),
+                }
+                return self._dispatch_post("/questions", forwarded)
+
+            if kind == "progress":
+                forwarded = {
+                    "status": body.get("status", "in_progress"),
+                    "current_task": body.get("current_task", ""),
+                    "completed": body.get("completed", []),
+                    "pending": body.get("pending", []),
+                    "blocker": body.get("blocker", ""),
+                }
+                return self._dispatch_post(f"/progress/{role}", forwarded)
+
+            return self._err(400, f"Unknown kind: '{kind}'. Valid: answer/finding/blocker/question/progress")
+
         # POST /findings
         if path == "/findings":
             role = body.get("from", "").strip()
