@@ -1,0 +1,41 @@
+#!/bin/sh
+# .githooks/pre-commit -- author guard
+#
+# History lesson (5ce84eb): merge commit landed with user.name=MXM
+# (the Windows OS username) instead of the role identity 'computer_analyst'.
+# That commit lives forever in public history. This hook prevents recurrence.
+#
+# Reject the commit if user.name is one of the well-known default / unset
+# values. To bypass once (rare cases), run with GIT_BYPASS_AUTHOR=1.
+
+NAME=$(git config user.name)
+EMAIL=$(git config user.email)
+
+case "$NAME" in
+  ""|"MXM"|"Your Name"|"root"|"Administrator"|"User"|"git")
+    if [ "$GIT_BYPASS_AUTHOR" = "1" ]; then
+      echo "[pre-commit] bypassed via GIT_BYPASS_AUTHOR=1 (user.name='$NAME')"
+      exit 0
+    fi
+    echo "[pre-commit] BLOCKED: user.name='$NAME' is a default / unset value."
+    echo ""
+    echo "  This repo (HJSSSRX/xiaokon-all) requires a role-scoped identity."
+    echo "  For the computer_analyst role:"
+    echo ""
+    echo "    git config user.name  'computer_analyst'"
+    echo "    git config user.email 'computer-analyst@xiaokong.local'"
+    echo ""
+    echo "  To bypass once (NOT recommended):"
+    echo "    GIT_BYPASS_AUTHOR=1 git commit ..."
+    exit 1
+    ;;
+esac
+
+# user.email sanity (warn only, don't block)
+case "$EMAIL" in
+  ""|"you@example.com"|"mxm@example.com")
+    echo "[pre-commit] warn: user.email='$EMAIL' looks like a default; consider fixing."
+    ;;
+esac
+
+exit 0

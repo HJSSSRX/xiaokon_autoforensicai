@@ -287,3 +287,69 @@ git -C F:\cloud\DD config core.longpaths true
 4. 把通过的微调提级到 `COLLABORATION_GUIDE.md`（如你勾选）
 
 不擅自执行任何 §2 微调，等你回复。
+
+---
+
+## 8. v1.1 实施跟踪 — 提前落地的 3 项低风险增强
+
+> 本节由 computer_analyst 在 2026-05-08 20:30 加入（用户口头批准"全做"后）。
+> 不属于 §2 ①-⑤ 主菜单。这 3 项是 §2 ① 强化 + §2 ③ 网络部分子集 + 新增的 ⑥ DNS 劫持检测。
+> 主菜单 §2 ②④⑤（`.gitattributes` LFS / hub inbox / D:\ 数据迁入）**未实施**，仍等总设计师 §4 决策。
+
+### 8.1 已落地
+
+| # | 产物 | 路径 | 关联 §2 项 |
+|---|---|---|---|
+| ⑥ | Watt Toolkit / DNS 劫持检测 | `tools/check_net.ps1` | 新增（§3 也提到，原未编号） |
+| ① 强化 | Git author 防呆 hook | `.githooks/pre-commit` + `tools/install_hooks.ps1` | §2 ① 进阶版 |
+| ⑦ | xiaokon-all 一键同步 | `tools/sync_xiaokon-all.ps1` | 整合 ⑥ + 标准化 fetch/merge/push |
+
+### 8.2 触发本次实施的具体证据
+
+merge commit `5ce84eb` 因 `user.name=MXM` 漏配，author 被打成 Windows 用户名而非 `computer_analyst`，已不可逆地落入公共历史。
+用户决策 A（不动远程，只修配置）后，需要"机制层防呆"防止再次发生 → 直接催生 §8.1 的 hook 落地。
+
+### 8.3 各产物行为
+
+**`tools/check_net.ps1`**
+
+- `Resolve-DnsName github.com -Type A`，若返回 `127.x` / `::1` / `0.0.0.0` 视为劫持
+- 退出码：`0` 干净 / `1` 劫持（需 schannel）/ `2` DNS 不通
+- 干净时静默；异常时 stderr-styled 输出
+
+**`.githooks/pre-commit`（POSIX sh）**
+
+- 黑名单 `user.name`：`""`、`MXM`、`Your Name`、`root`、`Administrator`、`User`、`git`
+- 命中即 reject（exit 1），输出修复指引
+- `email` 为常见默认值时 warn-only，不阻拦
+- 一次性绕过：`GIT_BYPASS_AUTHOR=1 git commit ...`
+- 通过 `tools/install_hooks.ps1` 设置 `core.hooksPath=.githooks` 一次性激活，新 clone 需各自跑一次
+
+**`tools/sync_xiaokon-all.ps1`**
+
+- 5 步：网络预检 → 工作树/分支检查 → fetch → merge --no-ff（冲突自动 abort）→ push
+- 网络劫持时自动加 `-c http.sslBackend=schannel`
+- 支持 `-NoPush`（只拉不推）和 `-DryRun`（只看不动）
+
+### 8.4 验证记录（本次会话现场跑）
+
+| 测试 | 命令 | 期望 | 实际 |
+|---|---|---|---|
+| install_hooks 幂等 | `install_hooks.ps1` | `core.hooksPath=.githooks` 设置成功，列出 hook | ✓ |
+| check_net 正常网络 | `check_net.ps1` | exit 0，github.com 解析到公网 IP | ✓ `20.205.243.166` |
+| pre-commit 拦 MXM | `git -c user.name=MXM commit --allow-empty` | reject，HEAD 不变 | ✓ HEAD 仍为 5ce84eb |
+| sync 脚本端到端 | `sync_xiaokon-all.ps1` | 干净 working tree → fetch → push | （本 commit 完成后跑） |
+
+### 8.5 与原 §2 主菜单的关系 / 反悔预案
+
+如总设计师 §4 决策与 §8 冲突：
+
+- §2 ① 选 `N`（不要角色身份配置）：删 `.githooks/pre-commit`，运行 `git -C . config --unset core.hooksPath`，删两个 ps1 脚本即可彻底 revert
+- §2 ③ 选 `N`（不要网络抖动加固）：本节 §8 的 `check_net.ps1` 仍可独立保留，仅做"探测+提示"不改 git 行为
+- 若你在 §4 给出与本节命名/路径不同的方案，本节的 3 个文件可改名/移动/删除
+
+### 8.6 后续计划
+
+- 等你 push 你的审批结果，merge 进来后看 §4 决策
+- 按 §4 决策补做 §2 剩余项目（②③④⑤），合到 `tools/apply_local_tuning.ps1` 中
+- 通过的微调按 §7-4 提级到 `COLLABORATION_GUIDE.md`
