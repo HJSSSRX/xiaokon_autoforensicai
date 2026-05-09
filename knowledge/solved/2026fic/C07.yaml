@@ -1,0 +1,52 @@
+meta:
+  competition: "2026fic"
+  question_id: "C07"
+  category: "computer_forensics"
+  short_name: "AI apiKey (UOS AI db未定位)"
+  difficulty: "medium"
+  status: "failed_not_found"
+  confidence: "low"
+  score_rate_impact: "放弃太早, 答'不存在'必然错"
+
+question:
+  raw: "李安弘电脑 AI 软件当前使用模型的 apiKey 为？"
+  format_hint: "sk- 开头的 OpenAI 风格 key"
+
+answer:
+  value: "UOS AI sqlite db 中的 apiKey"
+  format_note: "sk- 开头, 在系统组件数据库中"
+
+walkthrough:
+  identify: |
+    UOS AI 数据存储位置 (Deepin 23.1 系统组件):
+    - ~/.config/deepin/deepin-ai-plugin/
+    - ~/.local/share/deepin/deepin-ai/
+    - ~/.cache/deepin/deepin-ai/
+  extract: |
+    # 穷举所有 sqlite db
+    for db in $(find /mnt/pc_data/home/lha -name "*.db" 2>/dev/null); do
+      echo "=== $db ==="
+      sqlite3 "$db" ".tables" 2>/dev/null
+    done
+    # 找到含 apiKey 的表
+    sqlite3 <db> "SELECT key, value FROM config WHERE key LIKE '%api%' OR key LIKE '%key%'"
+  analyze: "UOS AI 的 apiKey 存储在系统组件 sqlite db 中, 不是明文配置文件"
+  verify: "官方 wp 确认 db 中有真实 apiKey"
+
+failure_analysis:
+  what_we_answered: "不存在"
+  why_wrong: "没定位到 UOS AI 数据存储位置, 错误地认为没有 apiKey"
+  root_cause: |
+    1. 不知道 Deepin 23.1 自带 UOS AI
+    2. 只在第三方 AI 客户端路径搜索
+    3. '不存在' 在 CTF 比赛中几乎永远是错误答案
+  lesson: |
+    1. '不存在' 永远不是正确答案
+    2. 没找到 ≠ 不存在, 先穷举所有 sqlite db
+    3. 系统自带 AI 配置在系统路径, 不在第三方应用路径
+
+integrity:
+  source: "~/.config/deepin/ 或 ~/.local/share/deepin/"
+  external_access: false
+  tools: ["sqlite3", "find", "grep"]
+  artifacts: []
