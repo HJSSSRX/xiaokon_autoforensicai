@@ -1,0 +1,55 @@
+meta:
+  competition: "2026fic"
+  question_id: "C04"
+  category: "computer_forensics"
+  short_name: "APK下载链接 (RSA Fermat)"
+  difficulty: "medium"
+  status: "solved_in_retrospect"
+  confidence: "high"
+  score_rate_impact: "missed_due_to_encryption_blind_spot"
+
+question:
+  raw: "推广设计图中的 apk 下载链接为？"
+  format_hint: "URL 格式，如 https://..."
+
+answer:
+  value: "从解密后的推广设计图 OCR 提取"
+  format_note: "需先 RSA Fermat 解密 .enc 文件再 OCR"
+
+walkthrough:
+  identify: |
+    Downloads/ 目录下三件套:
+    - 推广设计图.png.enc (376KB 加密文件)
+    - 加密图片查看.html (前端 RSA 解密器)
+    - public.txt (RSA 公钥: N + e=65537)
+  extract: |
+    # Fermat 分解 (q-p = 240, 0 步命中)
+    N = 57751892008149574447756694613209346511056045951970458143905594411398554113111623746466692172544473909892773600617029641656248235151775166339061269972238018743173330948084699695182438765935110193323089354031112350869626121317836465551360104372140181097747761558797918522051881262043738603183528521379831286761
+    p, q = fermat_factor(N)  # 0 steps
+    phi = (p-1)*(q-1)
+    d = pow(65537, -1, phi)
+  analyze: |
+    加密格式 (从 加密图片查看.html JS 逆向):
+    - 每 128 字节 ciphertext block
+    - RSA 解密后取 120 字节 plaintext
+    - 拼接所有 block 得完整 PNG
+    - 找到 IEND chunk 截断尾部填充
+  verify: "PNG magic 验证通过, IEND 在 offset 352792"
+  command: "python3 .tmp_q4_decrypt.py"
+
+failure_analysis:
+  what_we_answered: "https://dl.sp-live88.com/update/latest.apk"
+  why_wrong: "完全没尝试解密 .enc 文件, 拿了 APP 内 URL 凑答案"
+  root_cause: "看到加密文件没有条件反射去同目录找解密器"
+  lesson: |
+    1. .enc + .html 同目录 → 加密+解密对, 优先解
+    2. public.txt 里 1024-bit N → 优先试 Fermat
+    3. 解密后是图片 → OCR 提取文字
+
+integrity:
+  source: "/mnt/pc_data/home/lha/Downloads/"
+  external_access: false
+  tools: ["python3", "tesseract/paddleocr"]
+  artifacts:
+    - ".tmp_q4_decrypt.py"
+    - "D:\\2026FIC\\_q4_tuiguang.png"

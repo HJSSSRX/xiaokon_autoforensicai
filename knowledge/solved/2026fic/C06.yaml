@@ -1,0 +1,42 @@
+meta:
+  competition: "2026fic"
+  question_id: "C06"
+  category: "computer_forensics"
+  short_name: "AI模型类型 (题意误读)"
+  difficulty: "medium"
+  status: "failed_semantic_misunderstanding"
+  confidence: "low"
+  score_rate_impact: "题意误读导致方向全错"
+
+question:
+  raw: "李安弘电脑 AI 软件当前使用的模型类型为？"
+  format_hint: "简短名称，如 deepseek"
+
+answer:
+  value: "OpenRouter"
+  format_note: "中文'类型'指 provider/平台, 不是具体 model_id"
+
+walkthrough:
+  identify: |
+    Deepin 23.1 自带 UOS AI (系统组件, 非第三方客户端)
+    配置不在 ~/.config/CherryStudio/ 等第三方路径
+  extract: |
+    find /mnt/pc_data/home/lha -name "*.db" -exec sqlite3 {} ".tables" \; 2>/dev/null
+    find /mnt/pc_data/home/lha -name "*.json" -exec grep -l "provider" {} \;
+  analyze: "UOS AI 使用 OpenRouter 作为 API 网关, 后端可切换多种模型"
+  verify: "官方 wp 确认答案为 provider 名"
+
+failure_analysis:
+  what_we_answered: "minimax/minimax-m2.5:free"
+  why_wrong: "把'类型'理解为具体 model_id, 实际问的是 AI 服务提供商"
+  root_cause: "中文'类型'在不同语境含义不同, 比赛语境下通常指 provider/category"
+  lesson: |
+    1. '类型' → 优先理解为 provider/category, 不是具体型号
+    2. 系统自带 AI (UOS AI) 不是第三方客户端
+    3. 不要在 CherryStudio/ChatBox/LobeChat 清单上浪费搜索时间
+
+integrity:
+  source: "~/.config/deepin/ 或 ~/.local/share/deepin/"
+  external_access: false
+  tools: ["sqlite3", "find", "grep"]
+  artifacts: []

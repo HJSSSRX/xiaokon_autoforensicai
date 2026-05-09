@@ -1,15 +1,17 @@
 <#
 .SYNOPSIS
-    Detect github.com DNS hijack (Watt Toolkit / Steam++ Accelerator symptom).
+    Detect local accelerator side-effects (Watt Toolkit / Steam++ symptoms).
 
 .DESCRIPTION
-    Resolves github.com via DNS and checks if any returned IP falls into
-    loopback / null / IPv6-loopback ranges, which indicates the local
-    accelerator software is intercepting GitHub traffic.
+    Three-stage probe:
+      Stage 0: residual loopback proxy in HKCU Internet Settings (breaks
+               Electron apps like Windsurf even after accelerator quits).
+      Stage 1: github.com DNS resolution check (loopback / null IPs => DNS hijack).
+      Stage 2: TLS probe via git+openssl backend (cert verify failure => TLS MITM).
 
     Exit codes:
-        0 = clean, github.com resolves to public IPs
-        1 = hijacked, push must use -c http.sslBackend=schannel
+        0 = clean
+        1 = hijacked / residue detected (see message for fix)
         2 = DNS unreachable, no resolution at all
 
 .PARAMETER Quiet
@@ -22,6 +24,23 @@
 param(
     [switch]$Quiet
 )
+
+# Stage 0: residual local proxy in registry (accelerator side-effect).
+# Symptom: HKCU\...\Internet Settings\ProxyServer = 127.0.0.1:<port> even when
+# ProxyEnable=0. Electron apps (Windsurf / VS Code) may still attempt that
+# dead loopback port, surfacing as misleading "third-party model provider"
+# errors. Seen with Watt Toolkit / Steam++ residue.
+$inet = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
+try {
+    $proxySrv = (Get-ItemProperty -Path $inet -ErrorAction Stop).ProxyServer
+} catch { $proxySrv = $null }
+if ($proxySrv -match '127\.0\.0\.1|localhost') {
+    Write-Host "[NET][PROXY-RESIDUE] HKCU ProxyServer = $proxySrv" -ForegroundColor Yellow
+    Write-Host '             local accelerator left a dead loopback proxy in registry'
+    Write-Host '             Electron apps (Windsurf) may still hit it and fail'
+    Write-Host "  Fix: Set-ItemProperty -Path `"$inet`" -Name ProxyServer -Value `"`""
+    exit 1
+}
 
 try {
     $rec = Resolve-DnsName -Name github.com -Type A -DnsOnly -ErrorAction Stop
